@@ -19,8 +19,9 @@ export interface MarketingLogPayload {
 }
 
 /**
- * 렌더링된 카드뉴스 이미지 파일들을 무료 퍼블릭 이미지 호스트(catbox.moe)에 업로드하고 퍼블릭 URL 배열 반환.
- * (인스타그램 Graph API에서 카드뉴스를 가져올 수 있도록 퍼블릭 이미지 URL이 필수적입니다.)
+ * 렌더링된 카드뉴스 이미지 파일들을 무료 퍼블릭 이미지 호스트에 업로드하고 퍼블릭 URL 배열 반환.
+ * 1차: 0x0.st (완전 직접 링크, Meta 스크래퍼 차단 없음)
+ * 2차: catbox.moe (로컬 예비용)
  */
 export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promise<string[]> {
     const publicUrls: string[] = [];
@@ -34,26 +35,29 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
 
         let uploadedUrl = '';
 
-        // 1차 시도: tmpfiles.org (보안 필터가 느슨하여 깃허브 액션 러너 클라우드 IP에서 성공 확률 높음)
+        // 1차 시도: 0x0.st — 완전 직접 파일 URL, Meta 스크래퍼를 차단하지 않음
         try {
-            const formDataTmp = new FormData();
-            formDataTmp.append('file', fs.createReadStream(filePath));
+            const formData0x0 = new FormData();
+            formData0x0.append('file', fs.createReadStream(filePath));
 
-            const response = await axios.post('https://tmpfiles.org/api/v1/upload', formDataTmp, {
-                headers: formDataTmp.getHeaders(),
+            const response = await axios.post('https://0x0.st', formData0x0, {
+                headers: {
+                    ...formData0x0.getHeaders(),
+                    'User-Agent': 'Mozilla/5.0 (compatible; SNS-Bot/1.0)'
+                },
                 timeout: 20000
             });
 
-            const rawUrl = response.data?.data?.url;
-            if (rawUrl && typeof rawUrl === 'string') {
-                uploadedUrl = rawUrl.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
-                console.log(`[ImageUploader] 슬라이드 ${i + 1} 1차 업로드 성공 (tmpfiles.org) -> ${uploadedUrl}`);
+            const directUrl = typeof response.data === 'string' ? response.data.trim() : '';
+            if (directUrl && directUrl.startsWith('http')) {
+                uploadedUrl = directUrl;
+                console.log(`[ImageUploader] 슬라이드 ${i + 1} 1차 업로드 성공 (0x0.st) -> ${uploadedUrl}`);
             }
-        } catch (tmpErr: any) {
-            console.warn(`⚠️ [ImageUploader] 슬라이드 ${i + 1} 1차 업로드 실패 (tmpfiles.org): ${tmpErr.message || tmpErr}`);
+        } catch (err0x0: any) {
+            console.warn(`⚠️ [ImageUploader] 슬라이드 ${i + 1} 1차 업로드 실패 (0x0.st): ${err0x0.message || err0x0}`);
         }
 
-        // 2차 시도 (Fallback): catbox.moe (로컬이나 다른 호스트에서 예비용)
+        // 2차 시도 (Fallback): catbox.moe
         if (!uploadedUrl) {
             try {
                 const formDataCat = new FormData();

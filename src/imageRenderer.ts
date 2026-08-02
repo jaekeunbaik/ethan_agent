@@ -685,7 +685,7 @@ export async function renderSlideImage(slide: CardNewsSlide, totalSlides: number
         drawFooter(ctx, slide.slideNumber, totalSlides);
     }
 
-    return canvas.toBuffer('image/png');
+    return canvas.toBuffer('image/jpeg', 92);
 }
 
 export async function renderAllCardNewsSlides(
@@ -698,7 +698,7 @@ export async function renderAllCardNewsSlides(
     const generatedFilePaths: string[] = [];
     for (let i = 0; i < slides.length; i++) {
         const imageBuffer = await renderSlideImage(slides[i], slides.length);
-        const filePath = path.join(outputDir, `slide_${i + 1}.png`);
+        const filePath = path.join(outputDir, `slide_${i + 1}.jpg`);
         fs.writeFileSync(filePath, imageBuffer);
         generatedFilePaths.push(filePath);
         console.log(`[ImageRenderer] 슬라이드 ${i + 1}/${slides.length} 렌더링 완료: ${filePath}`);
