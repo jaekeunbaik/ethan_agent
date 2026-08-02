@@ -1,7 +1,22 @@
-import { createCanvas, CanvasRenderingContext2D } from '@napi-rs/canvas';
+import { createCanvas, CanvasRenderingContext2D, GlobalFonts } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 import { CardNewsSlide } from './contentGenerator';
+
+// 리눅스(GitHub Actions) 환경 한글 폰트 자동 등록
+const fontPaths = [
+    { path: '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', name: 'NanumGothic' },
+    { path: '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf', name: 'NanumGothic' },
+    { path: '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', name: 'Noto Sans CJK KR' },
+];
+
+for (const font of fontPaths) {
+    if (fs.existsSync(font.path)) {
+        try {
+            GlobalFonts.registerFromPath(font.path, font.name);
+        } catch { /* 이미 등록되었거나 패스 */ }
+    }
+}
 
 const CANVAS_SIZE = 1080;
 
@@ -26,7 +41,7 @@ const COLORS = {
     emerald: '#10B981',
 };
 
-const FONT_FAMILY = '"Malgun Gothic", "Apple SD Gothic Neo", "NanumGothic", "Noto Sans CJK KR", sans-serif';
+const FONT_FAMILY = '"NanumGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
 const ITEM_COLORS = [
     { bg: '#FFF1F1', border: '#FF6B6B', badge: '#FF6B6B', text: '#FF6B6B' },
