@@ -20,12 +20,86 @@ for (const font of fontPaths) {
 
 const CANVAS_SIZE = 1080;
 
-const COLORS = {
+interface ColorTheme {
+    grad1: string;
+    grad2: string;
+    grad3: string;
+    coral: string;
+    violet: string;
+    bgGradEnd: string;
+    itemColors: Array<{ bg: string; border: string; badge: string; text: string }>;
+}
+
+const THEMES: ColorTheme[] = [
+    // 1. Coral Violet (기본 화사함)
+    {
+        grad1: '#FF6B6B', grad2: '#A855F7', grad3: '#6366F1',
+        coral: '#FF6B6B', violet: '#A855F7', bgGradEnd: '#F3F0FF',
+        itemColors: [
+            { bg: '#FFF1F1', border: '#FF6B6B', badge: '#FF6B6B', text: '#FF6B6B' },
+            { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#A855F7' },
+            { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
+            { bg: '#F0FDF4', border: '#10B981', badge: '#10B981', text: '#10B981' },
+        ]
+    },
+    // 2. Mint & Teal (청량한 민트 에메랄드)
+    {
+        grad1: '#0D9488', grad2: '#0284C7', grad3: '#6366F1',
+        coral: '#0D9488', violet: '#0284C7', bgGradEnd: '#F0FDFA',
+        itemColors: [
+            { bg: '#CCFBF1', border: '#0D9488', badge: '#0D9488', text: '#0D9488' },
+            { bg: '#E0F2FE', border: '#0284C7', badge: '#0284C7', text: '#0284C7' },
+            { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
+            { bg: '#ECFDF5', border: '#10B981', badge: '#10B981', text: '#10B981' },
+        ]
+    },
+    // 3. Sunset Orange & Amber (열정적인 오렌지/골드)
+    {
+        grad1: '#F97316', grad2: '#EF4444', grad3: '#8B5CF6',
+        coral: '#F97316', violet: '#EF4444', bgGradEnd: '#FFF7ED',
+        itemColors: [
+            { bg: '#FFEDD5', border: '#F97316', badge: '#F97316', text: '#EA580C' },
+            { bg: '#FEE2E2', border: '#EF4444', badge: '#EF4444', text: '#DC2626' },
+            { bg: '#F3E8FF', border: '#8B5CF6', badge: '#8B5CF6', text: '#7C3AED' },
+            { bg: '#FEF3C7', border: '#F59E0B', badge: '#F59E0B', text: '#D97706' },
+        ]
+    },
+    // 4. Royal Blue & Violet (전문적이고 세련된 인디고)
+    {
+        grad1: '#2563EB', grad2: '#7C3AED', grad3: '#EC4899',
+        coral: '#2563EB', violet: '#7C3AED', bgGradEnd: '#EFF6FF',
+        itemColors: [
+            { bg: '#DBEAFE', border: '#2563EB', badge: '#2563EB', text: '#1D4ED8' },
+            { bg: '#EDE9FE', border: '#7C3AED', badge: '#7C3AED', text: '#6D28D9' },
+            { bg: '#FCE7F3', border: '#EC4899', badge: '#EC4899', text: '#DB2777' },
+            { bg: '#E0F2FE', border: '#0284C7', badge: '#0284C7', text: '#0369A1' },
+        ]
+    },
+    // 5. Rose & Peach (화사한 핑크 피치)
+    {
+        grad1: '#F43F5E', grad2: '#FB7185', grad3: '#A855F7',
+        coral: '#F43F5E', violet: '#FB7185', bgGradEnd: '#FFF1F2',
+        itemColors: [
+            { bg: '#FFE4E6', border: '#F43F5E', badge: '#F43F5E', text: '#E11D48' },
+            { bg: '#FECDD3', border: '#FB7185', badge: '#FB7185', text: '#E11D48' },
+            { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#7E22CE' },
+            { bg: '#FFEDD5', border: '#F97316', badge: '#F97316', text: '#C2410C' },
+        ]
+    }
+];
+
+const FONT_FAMILY = '"NanumGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+
+// 랜덤 테마 선택
+let currentTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+
+export function setRandomTheme() {
+    currentTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+}
+
+const BASE_COLORS = {
     bg: '#FFFFFF',
     bgSoft: '#F8F7FF',
-    grad1: '#FF6B6B',
-    grad2: '#A855F7',
-    grad3: '#6366F1',
     textDark: '#1A1A2E',
     textBody: '#374151',
     textMuted: '#6B7280',
@@ -33,23 +107,36 @@ const COLORS = {
     textWhite: '#FFFFFF',
     cardBg: '#FFFFFF',
     cardBorder: '#E5E7EB',
-    coral: '#FF6B6B',
-    violet: '#A855F7',
-    indigo: '#6366F1',
-    teal: '#14B8A6',
-    amber: '#F59E0B',
-    emerald: '#10B981',
 };
 
-const FONT_FAMILY = '"NanumGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+const COLORS = new Proxy(BASE_COLORS, {
+    get(target, prop: string) {
+        if (prop in target) return (target as any)[prop];
+        if (prop === 'grad1') return currentTheme.grad1;
+        if (prop === 'grad2') return currentTheme.grad2;
+        if (prop === 'grad3') return currentTheme.grad3;
+        if (prop === 'coral') return currentTheme.coral;
+        if (prop === 'violet') return currentTheme.violet;
+        if (prop === 'indigo') return currentTheme.grad3;
+        if (prop === 'bgGradEnd') return currentTheme.bgGradEnd;
+        return undefined;
+    }
+}) as typeof BASE_COLORS & {
+    grad1: string; grad2: string; grad3: string;
+    coral: string; violet: string; indigo: string; bgGradEnd: string;
+};
 
-const ITEM_COLORS = [
-    { bg: '#FFF1F1', border: '#FF6B6B', badge: '#FF6B6B', text: '#FF6B6B' },
-    { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#A855F7' },
-    { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
-    { bg: '#F0FDF4', border: '#10B981', badge: '#10B981', text: '#10B981' },
-    { bg: '#FFFBEB', border: '#F59E0B', badge: '#F59E0B', text: '#F59E0B' },
-];
+const ITEM_COLORS = new Proxy([], {
+    get(target, prop: string) {
+        const index = Number(prop);
+        if (!isNaN(index)) {
+            const items = currentTheme.itemColors;
+            return items[index % items.length];
+        }
+        if (prop === 'length') return currentTheme.itemColors.length;
+        return (currentTheme.itemColors as any)[prop];
+    }
+}) as Array<{ bg: string; border: string; badge: string; text: string }>;
 
 function stripEmojis(text: string): string {
     if (!text) return '';
@@ -710,6 +797,7 @@ export async function renderAllCardNewsSlides(
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
+    setRandomTheme();
     const generatedFilePaths: string[] = [];
     for (let i = 0; i < slides.length; i++) {
         const imageBuffer = await renderSlideImage(slides[i], slides.length);
