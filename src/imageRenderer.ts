@@ -3,19 +3,24 @@ import fs from 'fs';
 import path from 'path';
 import { CardNewsSlide } from './contentGenerator';
 
-// 리눅스(GitHub Actions) 환경 한글 폰트 자동 등록
-const fontPaths = [
-    { path: '/usr/share/fonts/truetype/nanum/NanumGothic.ttf', name: 'NanumGothic' },
-    { path: '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf', name: 'NanumGothic' },
-    { path: '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', name: 'Noto Sans CJK KR' },
-];
-
-for (const font of fontPaths) {
-    if (fs.existsSync(font.path)) {
-        try {
-            GlobalFonts.registerFromPath(font.path, font.name);
-        } catch { /* 이미 등록되었거나 패스 */ }
+// 리눅스(GitHub Actions) 환경 한글 폰트 전체 자동 등록
+const nanumDir = '/usr/share/fonts/truetype/nanum';
+if (fs.existsSync(nanumDir)) {
+    try {
+        const files = fs.readdirSync(nanumDir);
+        for (const file of files) {
+            if (file.endsWith('.ttf') || file.endsWith('.otf')) {
+                const fontPath = path.join(nanumDir, file);
+                GlobalFonts.registerFromPath(fontPath);
+            }
+        }
+    } catch (e) {
+        console.warn('폰트 자동 등록 중 경고:', e);
     }
+}
+const notoFile = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc';
+if (fs.existsSync(notoFile)) {
+    try { GlobalFonts.registerFromPath(notoFile, 'Noto Sans CJK KR'); } catch {}
 }
 
 const CANVAS_SIZE = 1080;
@@ -88,7 +93,7 @@ const THEMES: ColorTheme[] = [
     }
 ];
 
-const FONT_FAMILY = '"NanumGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+const FONT_FAMILY = '"NanumGothic", "NanumSquare", "NanumBarunGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
 // 랜덤 테마 선택
 let currentTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
