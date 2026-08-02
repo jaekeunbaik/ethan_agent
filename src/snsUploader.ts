@@ -38,10 +38,10 @@ async function getEffectiveAccessToken(instagramAccountId: string, userToken: st
  */
 export async function postToThreads(threadText: string): Promise<string> {
     const threadsUserId = process.env.THREADS_USER_ID;
-    const accessToken = process.env.META_ACCESS_TOKEN;
+    const accessToken = process.env.THREADS_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
 
     if (!threadsUserId || !accessToken) {
-        throw new Error('THREADS_USER_ID 또는 META_ACCESS_TOKEN이 설정되지 않았습니다.');
+        throw new Error('THREADS_USER_ID 또는 THREADS_ACCESS_TOKEN이 설정되지 않았습니다.');
     }
 
     console.log('[Threads] 스레드 포스팅 컨테이너 생성 중...');
@@ -89,10 +89,10 @@ export async function postCarouselToInstagram(
     instaCaption: string
 ): Promise<string> {
     const instagramAccountId = process.env.INSTAGRAM_ACCOUNT_ID;
-    const userAccessToken = process.env.META_ACCESS_TOKEN;
+    const userAccessToken = process.env.INSTAGRAM_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
 
     if (!instagramAccountId || !userAccessToken) {
-        throw new Error('INSTAGRAM_ACCOUNT_ID 또는 META_ACCESS_TOKEN이 설정되지 않았습니다.');
+        throw new Error('INSTAGRAM_ACCOUNT_ID 또는 INSTAGRAM_ACCESS_TOKEN이 설정되지 않았습니다.');
     }
 
     if (imagePublicUrls.length === 0) {
@@ -100,7 +100,9 @@ export async function postCarouselToInstagram(
     }
 
     // 최적 권한을 가진 Access Token 준비
-    const accessToken = await getEffectiveAccessToken(instagramAccountId, userAccessToken);
+    const isInstagramLogin = userAccessToken.startsWith('IG');
+    const apiBase = isInstagramLogin ? 'https://graph.instagram.com/v21.0' : 'https://graph.facebook.com/v21.0';
+    const accessToken = isInstagramLogin ? userAccessToken : await getEffectiveAccessToken(instagramAccountId, userAccessToken);
 
     console.log(`[Instagram] 총 ${imagePublicUrls.length}장의 개별 아이템 컨테이너 생성 중...`);
 
@@ -108,7 +110,7 @@ export async function postCarouselToInstagram(
     const itemContainerIds: string[] = [];
     for (let i = 0; i < imagePublicUrls.length; i++) {
         const imageUrl = imagePublicUrls[i];
-        const itemUrl = `https://graph.facebook.com/v21.0/${instagramAccountId}/media`;
+        const itemUrl = `${apiBase}/${instagramAccountId}/media`;
 
         const itemRes = await axios.post(itemUrl, null, {
             params: {
@@ -128,7 +130,7 @@ export async function postCarouselToInstagram(
 
     // Step 2: Create Carousel Parent Container
     console.log('[Instagram] 캐러셀 부모 컨테이너 생성 중...');
-    const carouselUrl = `https://graph.facebook.com/v21.0/${instagramAccountId}/media`;
+    const carouselUrl = `${apiBase}/${instagramAccountId}/media`;
     const carouselRes = await axios.post(carouselUrl, null, {
         params: {
             media_type: 'CAROUSEL',
@@ -150,7 +152,7 @@ export async function postCarouselToInstagram(
 
     // Step 3: Publish Carousel Container
     console.log('[Instagram] 캐러셀 게시물 최종 게시(Publish) 진행 중...');
-    const publishUrl = `https://graph.facebook.com/v21.0/${instagramAccountId}/media_publish`;
+    const publishUrl = `${apiBase}/${instagramAccountId}/media_publish`;
     const publishRes = await axios.post(publishUrl, null, {
         params: {
             creation_id: carouselContainerId,

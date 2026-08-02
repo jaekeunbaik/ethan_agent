@@ -34,12 +34,12 @@ export async function runMarketingPipeline(): Promise<void> {
         const localImagePaths = await renderAllCardNewsSlides(contentData.card_news_slides, outputDir);
         console.log(`✅ 이미지 렌더링 완료! (저장 위치: ${outputDir})`);
 
-        // 3단계: Supabase Storage에 카드뉴스 이미지 업로드하여 퍼블릭 URL 획득
-        console.log('\n☁️ [3/5] Supabase Storage에 이미지 업로드 중...');
+        // 3단계: 임시 공개 이미지 호스트에 카드뉴스 이미지 업로드하여 퍼블릭 URL 획득
+        console.log('\n☁️ [3/5] 임시 이미지 호스팅 서버에 업로드 중...');
         try {
             publicUrls = await uploadImagesToSupabaseStorage(localImagePaths);
         } catch (uploadError: any) {
-            console.warn('⚠️ Supabase Storage 업로드 실패 또는 미설정. 로컬 URL로 폴백하거나 검증 진행:', uploadError.message);
+            console.warn('⚠️ 임시 이미지 업로더 전송 실패:', uploadError.message);
         }
 
         // 4단계: Threads 자동 업로드
@@ -48,6 +48,9 @@ export async function runMarketingPipeline(): Promise<void> {
             threadsPostId = await postToThreads(contentData.thread_text);
         } catch (threadsErr: any) {
             console.error('❌ Threads 업로드 실패:', threadsErr.message || threadsErr);
+            if (threadsErr.response?.data) {
+                console.error('   상세 에러:', JSON.stringify(threadsErr.response.data, null, 2));
+            }
         }
 
         // 5단계: Instagram Graph API Carousel 자동 업로드
@@ -56,10 +59,13 @@ export async function runMarketingPipeline(): Promise<void> {
             if (publicUrls.length > 0) {
                 instagramPostId = await postCarouselToInstagram(publicUrls, contentData.insta_caption);
             } else {
-                console.warn('⚠️ 퍼블릭 이미지 URL이 없어 인스타그램 업로드를 건너뜁니다. (Supabase Storage 설정 필요)');
+                console.warn('⚠️ 퍼블릭 이미지 URL이 없어 인스타그램 업로드를 건너뜁니다.');
             }
         } catch (instaErr: any) {
             console.error('❌ Instagram 업로드 실패:', instaErr.message || instaErr);
+            if (instaErr.response?.data) {
+                console.error('   상세 에러:', JSON.stringify(instaErr.response.data, null, 2));
+            }
         }
 
         // 결과 판정 및 Supabase Database 로깅

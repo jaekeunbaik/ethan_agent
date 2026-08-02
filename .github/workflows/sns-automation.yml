@@ -1,0 +1,38 @@
+name: SNS Marketing Automation
+
+on:
+  schedule:
+    # 한국 시간(KST) 오전 11:00, 오후 6:00 실행 (UTC 기준 02:00, 09:00)
+    - cron: '0 2,9 * * *'
+  workflow_dispatch: # 수동 실행 버튼 공급
+
+jobs:
+  run-marketing:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build TypeScript
+      run: npx tsc
+
+    - name: Run SNS Marketing Pipeline
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+        INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        DRAFT_ETHAN_URL: ${{ secrets.DRAFT_ETHAN_URL }}
+      # 스케줄러 실행 시에 1회 포스팅을 즉시 올리도록 --test(즉시실행) 모드로 수행합니다
+      run: node dist/marketingAutomation.js --test
