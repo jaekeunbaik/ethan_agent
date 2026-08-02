@@ -61,7 +61,10 @@ export async function postToThreads(threadText: string): Promise<string> {
         throw new Error(`스레드 컨테이너 생성 실패: ${JSON.stringify(containerRes.data)}`);
     }
 
-    console.log(`[Threads] 스레드 컨테이너 생성 완료 (ID: ${creationId}). 게재(Publish) 진행 중...`);
+    console.log(`[Threads] 스레드 컨테이너 생성 완료 (ID: ${creationId}). 게재(Publish) 대기 중 (3초)...`);
+
+    // Meta 서버 복제 대기 시간 부여
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Step 2: Publish Threads Container
     const publishUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`;

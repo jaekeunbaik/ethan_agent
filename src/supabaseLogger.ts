@@ -38,7 +38,10 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
 
         try {
             const response = await axios.post('https://catbox.moe/user/api.php', formData, {
-                headers: formData.getHeaders(),
+                headers: {
+                    ...formData.getHeaders(),
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                },
                 timeout: 20000 // 20초 제한
             });
 

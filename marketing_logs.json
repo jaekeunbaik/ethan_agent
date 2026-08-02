@@ -685,5 +685,67 @@
     "status": "SUCCESS",
     "error_message": null,
     "created_at": "2026-08-02T12:23:48.964Z"
+  },
+  {
+    "topic": "대기업/IT기업 합격자소서는 이것이 다르다: 비포 & 애프터",
+    "thread_text": "내 자소서, 왜 서류 광탈할까? 😥 특히 대기업/IT는 더 어렵다고? 맞아요, 합격하는 자소서는 뭔가 다르죠! 막연한 경험 나열 대신, '그래서 뭘 했고 뭘 배웠는지' 명확히 보여주는 게 핵심! ✅ 전문성 어필, ✅ 직무 키워드, ✅ 임팩트 있는 문장! 이 3가지가 부족하다면? 지금 바로 Draft Ethan에서 합격 자소서의 비포&애프터를 경험해보세요! AI가 당신의 잠재력을 120% 끌어올려줄 거예요. 👉 https://draft-ethan.vercel.app/",
+    "insta_caption": "✨ 대기업/IT 합격 자소서, 뭐가 다를까? ✨ 단순한 경험 나열은 이제 그만! 인사담당자의 눈길을 사로잡는 자소서는 분명한 차이가 있습니다. 특히 대기업과 IT 기업은 '문제 해결 능력', '성과', '직무 전문성'을 중요하게 보죠. 📝 합격 자소서 꿀팁 3가지: 1. 구체적인 성과 제시: '열심히 일했습니다' 대신 'OO 프로젝트에서 X% 효율 개선'처럼 숫자로 보여주세요. 2. 직무 핵심 키워드 활용: 지원하는 직무의 JD를 꼼꼼히 분석해 핵심 키워드를 자소서에 녹여내세요. AI는 키워드를 좋아합니다! 3. 임팩트 있는 문장: 추상적인 표현은 피하고, 간결하고 명확하게 자신의 역량을 어필해야 합니다. 비포&애프터가 확실한 문장으로! 이 모든 걸 혼자서 하기 어렵다면? Draft Ethan이 도와드릴게요! AI가 당신의 자소서를 문맥 교정부터 직무별 키워드 최적화까지, 합격률을 높이는 자소서를 만들어 드립니다. 지금 바로 Draft Ethan에서 무료 교정 받고, 꿈의 기업에 한 발 더 다가가세요! 🚀 👉 https://draft-ethan.vercel.app/ #자소서 #합격자소서 #DraftEthan #취준생 #이직러 #취업성공 #AI자소서교정",
+    "card_news_slides": [
+      {
+        "slideNumber": 1,
+        "type": "COVER",
+        "title": "대기업/IT 합격 자소서, 이것이 다르다!",
+        "contentLines": [],
+        "subtitle": "서류 광탈을 멈추는 비포&애프터의 비밀"
+      },
+      {
+        "slideNumber": 2,
+        "type": "BODY",
+        "title": "#1 경험을 '성과'로 바꾸는 마법",
+        "contentLines": [
+          "BEFORE: \"서비스 개선을 위해 열심히 노력했습니다.\"",
+          "AFTER: \"사용자 피드백 분석 및 UI/UX 개선안 제안으로 월간 활성 사용자 15% 증가에 기여했습니다.\""
+        ]
+      },
+      {
+        "slideNumber": 3,
+        "type": "BODY",
+        "title": "#2 직무 키워드로 전문성 어필",
+        "contentLines": [
+          "BEFORE: \"데이터를 다루는 능력이 뛰어납니다.\"",
+          "AFTER: \"Python과 SQL을 활용한 데이터 전처리 및 분석으로 마케팅 캠페인 효율을 20% 향상시켰습니다.\""
+        ]
+      },
+      {
+        "slideNumber": 4,
+        "type": "BODY",
+        "title": "#3 '무엇'보다 '어떻게' 해결했는가",
+        "contentLines": [
+          "BEFORE: \"다양한 프로젝트를 경험했습니다.\"",
+          "AFTER: \"복잡한 시스템 통합 과정에서 발생한 버그를 신속하게 식별, 해결하여 프로젝트 지연을 방지했습니다.\""
+        ]
+      },
+      {
+        "slideNumber": 5,
+        "type": "CTA",
+        "title": "더 완벽한 자소서를 원한다면?",
+        "contentLines": [
+          "Draft Ethan에서 무료 교정 받기!",
+          "AI가 당신의 잠재력을 120% 끌어올려줄 거예요."
+        ]
+      }
+    ],
+    "card_news_urls": [
+      "https://files.catbox.moe/b89fq1.png",
+      "https://files.catbox.moe/wodqko.png",
+      "https://files.catbox.moe/pljxga.png",
+      "https://files.catbox.moe/xtmr0e.png",
+      "https://files.catbox.moe/smcbm7.png"
+    ],
+    "threads_post_id": "18117956050852475",
+    "instagram_post_id": "18184923916402612",
+    "status": "SUCCESS",
+    "error_message": null,
+    "created_at": "2026-08-02T12:43:57.244Z"
   }
 ]
