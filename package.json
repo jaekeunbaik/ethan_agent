@@ -1,0 +1,35 @@
+{
+    "name": "draft-ethan-sns-automation",
+    "version": "1.0.0",
+    "description": "Draft Ethan Instagram & Threads SNS Marketing Automation System",
+    "main": "dist/marketingAutomation.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "tsc && node dist/marketingAutomation.js",
+        "test:run": "tsc && node dist/marketingAutomation.js --test"
+    },
+    "keywords": [
+        "instagram",
+        "threads",
+        "gemini",
+        "marketing",
+        "automation",
+        "draft-ethan"
+    ],
+    "author": "Draft Ethan Engineering Team",
+    "license": "MIT",
+    "dependencies": {
+        "@google/genai": "*",
+        "@napi-rs/canvas": "*",
+        "@supabase/supabase-js": "*",
+        "axios": "*",
+        "dotenv": "*",
+        "node-cron": "*"
+    },
+    "devDependencies": {
+        "@types/node": "*",
+        "@types/node-cron": "*",
+        "ts-node": "*",
+        "typescript": "*"
+    }
+}
