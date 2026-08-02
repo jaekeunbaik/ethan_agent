@@ -19,9 +19,49 @@ export interface MarketingLogPayload {
 }
 
 /**
- * 렌더링된 카드뉴스 이미지 파일들을 무료 퍼블릭 이미지 호스트에 업로드하고 퍼블릭 URL 배열 반환.
- * 1차: 0x0.st (완전 직접 링크, Meta 스크래퍼 차단 없음)
- * 2차: catbox.moe (로컬 예비용)
+ * GitHub API로 이미지를 레포지토리에 커밋하고 raw.githubusercontent.com URL 반환.
+ * (GitHub CDN은 Meta 스크래퍼가 완전히 접근 가능하며, 추가 서비스 불필요)
+ */
+async function uploadViaGitHubAPI(filePath: string): Promise<string> {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPOSITORY; // e.g. "jaekeunbaik/ethan_agent"
+    if (!token || !repo) throw new Error('GITHUB_TOKEN 또는 GITHUB_REPOSITORY 환경변수 없음');
+
+    const fileName = path.basename(filePath);
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/output_cardnews/${fileName}`;
+    const content = fs.readFileSync(filePath).toString('base64');
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': 'ethan-agent-sns-bot',
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+    };
+
+    // 기존 파일 SHA 조회 (업데이트 시 필요)
+    let sha: string | undefined;
+    try {
+        const getRes = await axios.get(apiUrl, { headers });
+        sha = getRes.data.sha;
+    } catch { /* 신규 파일이면 SHA 불필요 */ }
+
+    const body: Record<string, string> = {
+        message: `chore: update cardnews image [skip ci]`,
+        content,
+        branch: 'master'
+    };
+    if (sha) body.sha = sha;
+
+    await axios.put(apiUrl, body, { headers });
+
+    // 캐시 버스팅을 위한 타임스탬프 추가
+    const rawUrl = `https://raw.githubusercontent.com/${repo}/master/output_cardnews/${fileName}?t=${Date.now()}`;
+    return rawUrl;
+}
+
+/**
+ * 렌더링된 카드뉴스 이미지를 업로드하고 퍼블릭 URL 배열 반환.
+ * 1차: GitHub API (raw.githubusercontent.com) — 안정적, Meta 차단 없음
+ * 2차: catbox.moe — 로컬 환경 예비용
  */
 export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promise<string[]> {
     const publicUrls: string[] = [];
@@ -35,26 +75,12 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
 
         let uploadedUrl = '';
 
-        // 1차 시도: 0x0.st — 완전 직접 파일 URL, Meta 스크래퍼를 차단하지 않음
+        // 1차 시도: GitHub API → raw.githubusercontent.com
         try {
-            const formData0x0 = new FormData();
-            formData0x0.append('file', fs.createReadStream(filePath));
-
-            const response = await axios.post('https://0x0.st', formData0x0, {
-                headers: {
-                    ...formData0x0.getHeaders(),
-                    'User-Agent': 'Mozilla/5.0 (compatible; SNS-Bot/1.0)'
-                },
-                timeout: 20000
-            });
-
-            const directUrl = typeof response.data === 'string' ? response.data.trim() : '';
-            if (directUrl && directUrl.startsWith('http')) {
-                uploadedUrl = directUrl;
-                console.log(`[ImageUploader] 슬라이드 ${i + 1} 1차 업로드 성공 (0x0.st) -> ${uploadedUrl}`);
-            }
-        } catch (err0x0: any) {
-            console.warn(`⚠️ [ImageUploader] 슬라이드 ${i + 1} 1차 업로드 실패 (0x0.st): ${err0x0.message || err0x0}`);
+            uploadedUrl = await uploadViaGitHubAPI(filePath);
+            console.log(`[ImageUploader] 슬라이드 ${i + 1} 1차 업로드 성공 (GitHub Raw) -> ${uploadedUrl}`);
+        } catch (ghErr: any) {
+            console.warn(`⚠️ [ImageUploader] 슬라이드 ${i + 1} 1차 업로드 실패 (GitHub): ${ghErr.message}`);
         }
 
         // 2차 시도 (Fallback): catbox.moe
@@ -67,7 +93,7 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
                 const response = await axios.post('https://catbox.moe/user/api.php', formDataCat, {
                     headers: {
                         ...formDataCat.getHeaders(),
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     },
                     timeout: 20000
                 });
@@ -78,7 +104,7 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
                     console.log(`[ImageUploader] 슬라이드 ${i + 1} 2차 업로드 성공 (catbox.moe) -> ${uploadedUrl}`);
                 }
             } catch (catErr: any) {
-                console.error(`❌ [ImageUploader] 슬라이드 ${i + 1} 2차 업로드 실패 (catbox.moe):`, catErr.message || catErr);
+                console.error(`❌ [ImageUploader] 슬라이드 ${i + 1} 2차 업로드 실패 (catbox.moe):`, catErr.message);
             }
         }
 

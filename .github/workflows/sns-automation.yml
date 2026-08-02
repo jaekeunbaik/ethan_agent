@@ -9,6 +9,8 @@ on:
 jobs:
   run-marketing:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -34,5 +36,7 @@ jobs:
         THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
         THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
         DRAFT_ETHAN_URL: ${{ secrets.DRAFT_ETHAN_URL }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
       # 스케줄러 실행 시에 1회 포스팅을 즉시 올리도록 --test(즉시실행) 모드로 수행합니다
       run: node dist/marketingAutomation.js --test
