@@ -25,37 +25,64 @@ export interface MarketingLogPayload {
 export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promise<string[]> {
     const publicUrls: string[] = [];
 
-    console.log('[ImageUploader] Instagram / Threads API 전달용 퍼블릭 임시 이미지 URL 생성 중 (catbox.moe)...');
+    console.log('[ImageUploader] Instagram / Threads API 전달용 퍼블릭 임시 이미지 URL 생성 중...');
     for (let i = 0; i < imagePaths.length; i++) {
         const filePath = imagePaths[i];
         if (!fs.existsSync(filePath)) {
             throw new Error(`업로드 대상 파일이 존재하지 않습니다: ${filePath}`);
         }
 
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('fileToUpload', fs.createReadStream(filePath));
+        let uploadedUrl = '';
 
+        // 1차 시도: tmpfiles.org (보안 필터가 느슨하여 깃허브 액션 러너 클라우드 IP에서 성공 확률 높음)
         try {
-            const response = await axios.post('https://catbox.moe/user/api.php', formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                },
-                timeout: 20000 // 20초 제한
+            const formDataTmp = new FormData();
+            formDataTmp.append('file', fs.createReadStream(filePath));
+
+            const response = await axios.post('https://tmpfiles.org/api/v1/upload', formDataTmp, {
+                headers: formDataTmp.getHeaders(),
+                timeout: 20000
             });
 
-            const directUrl = typeof response.data === 'string' ? response.data.trim() : '';
-            if (directUrl && directUrl.startsWith('http')) {
-                publicUrls.push(directUrl);
-                console.log(`[ImageUploader] 슬라이드 ${i + 1} 업로드 성공 -> ${directUrl}`);
-            } else {
-                throw new Error(`응답 데이터가 올바른 URL이 아닙니다: ${response.data}`);
+            const rawUrl = response.data?.data?.url;
+            if (rawUrl && typeof rawUrl === 'string') {
+                uploadedUrl = rawUrl.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+                console.log(`[ImageUploader] 슬라이드 ${i + 1} 1차 업로드 성공 (tmpfiles.org) -> ${uploadedUrl}`);
             }
-        } catch (err: any) {
-            console.error(`❌ [ImageUploader] 슬라이드 ${i + 1} 업로드 실패:`, err.message || err);
-            throw new Error(`이미지 업로더 전송 오류: ${err.message}`);
+        } catch (tmpErr: any) {
+            console.warn(`⚠️ [ImageUploader] 슬라이드 ${i + 1} 1차 업로드 실패 (tmpfiles.org): ${tmpErr.message || tmpErr}`);
         }
+
+        // 2차 시도 (Fallback): catbox.moe (로컬이나 다른 호스트에서 예비용)
+        if (!uploadedUrl) {
+            try {
+                const formDataCat = new FormData();
+                formDataCat.append('reqtype', 'fileupload');
+                formDataCat.append('fileToUpload', fs.createReadStream(filePath));
+
+                const response = await axios.post('https://catbox.moe/user/api.php', formDataCat, {
+                    headers: {
+                        ...formDataCat.getHeaders(),
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    },
+                    timeout: 20000
+                });
+
+                const directUrl = typeof response.data === 'string' ? response.data.trim() : '';
+                if (directUrl && directUrl.startsWith('http')) {
+                    uploadedUrl = directUrl;
+                    console.log(`[ImageUploader] 슬라이드 ${i + 1} 2차 업로드 성공 (catbox.moe) -> ${uploadedUrl}`);
+                }
+            } catch (catErr: any) {
+                console.error(`❌ [ImageUploader] 슬라이드 ${i + 1} 2차 업로드 실패 (catbox.moe):`, catErr.message || catErr);
+            }
+        }
+
+        if (!uploadedUrl) {
+            throw new Error(`슬라이드 ${i + 1} 이미지의 퍼블릭 호스팅 업로드에 완전히 실패했습니다.`);
+        }
+
+        publicUrls.push(uploadedUrl);
     }
 
     console.log(`[ImageUploader] 총 ${publicUrls.length}장의 퍼블릭 이미지 임시 URL이 생성되었습니다.`);
