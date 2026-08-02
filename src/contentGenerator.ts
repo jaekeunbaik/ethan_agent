@@ -91,7 +91,7 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-flash-latest',
             contents: [
                 {
                     role: 'user',
