@@ -5,22 +5,52 @@ import { CardNewsSlide } from './contentGenerator';
 
 const CANVAS_SIZE = 1080;
 
-/**
- * 텍스트 래핑 헬퍼 함수
- */
-function wrapText(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    maxWidth: number
-): string[] {
+const COLORS = {
+    bg: '#FFFFFF',
+    bgSoft: '#F8F7FF',
+    grad1: '#FF6B6B',
+    grad2: '#A855F7',
+    grad3: '#6366F1',
+    textDark: '#1A1A2E',
+    textBody: '#374151',
+    textMuted: '#6B7280',
+    textLight: '#9CA3AF',
+    textWhite: '#FFFFFF',
+    cardBg: '#FFFFFF',
+    cardBorder: '#E5E7EB',
+    coral: '#FF6B6B',
+    violet: '#A855F7',
+    indigo: '#6366F1',
+    teal: '#14B8A6',
+    amber: '#F59E0B',
+    emerald: '#10B981',
+};
+
+const FONT_FAMILY = '"Malgun Gothic", "Apple SD Gothic Neo", "NanumGothic", "Noto Sans CJK KR", sans-serif';
+
+const ITEM_COLORS = [
+    { bg: '#FFF1F1', border: '#FF6B6B', badge: '#FF6B6B', text: '#FF6B6B' },
+    { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#A855F7' },
+    { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
+    { bg: '#F0FDF4', border: '#10B981', badge: '#10B981', text: '#10B981' },
+    { bg: '#FFFBEB', border: '#F59E0B', badge: '#F59E0B', text: '#F59E0B' },
+];
+
+function stripEmojis(text: string): string {
+    if (!text) return '';
+    return text
+        .replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        .trim();
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = words[0] || '';
-
     for (let i = 1; i < words.length; i++) {
         const word = words[i];
-        const width = ctx.measureText(currentLine + ' ' + word).width;
-        if (width < maxWidth) {
+        if (ctx.measureText(currentLine + ' ' + word).width < maxWidth) {
             currentLine += ' ' + word;
         } else {
             lines.push(currentLine);
@@ -31,303 +61,633 @@ function wrapText(
     return lines;
 }
 
-const FONT_FAMILY = '"Malgun Gothic", "Apple SD Gothic Neo", "NanumGothic", "Noto Sans CJK KR", sans-serif';
-
-/**
- * 텍스트에서 특수 이모지 및 특수 기호를 제거하는 헬퍼 함수 (tofu 방지)
- */
-function stripEmojis(text: string): string {
-    if (!text) return '';
-    return text
-        .replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
-        .trim();
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
 }
 
-/**
- * 단일 카드뉴스 슬라이드를 1080x1080 이미지로 렌더링하고 퍼버(Buffer)로 반환
- */
-export async function renderSlideImage(
-    slide: CardNewsSlide,
-    totalSlides: number = 5
-): Promise<Buffer> {
+// ─── 장식용 추상 일러스트 요소들 ────────────────────────────────────────────────
+
+/** 커버용: 우측 원형 클러스터 일러스트 */
+function drawCoverIllustration(ctx: CanvasRenderingContext2D) {
+    const cx = 820, cy = 520;
+
+    // 큰 반투명 배경 원 (연한 바이올렛)
+    const bigCircle = ctx.createRadialGradient(cx, cy, 0, cx, cy, 260);
+    bigCircle.addColorStop(0, 'rgba(168,85,247,0.10)');
+    bigCircle.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = bigCircle;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 260, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 바깥 링 (점선 느낌 = 여러 호)
+    ctx.strokeStyle = 'rgba(168,85,247,0.18)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 10]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 230, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 중간 그라데이션 원
+    const midGrad = ctx.createLinearGradient(cx - 160, cy - 160, cx + 160, cy + 160);
+    midGrad.addColorStop(0, 'rgba(255,107,107,0.55)');
+    midGrad.addColorStop(1, 'rgba(168,85,247,0.55)');
+    ctx.fillStyle = midGrad;
+    ctx.shadowColor = 'rgba(168,85,247,0.25)';
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 중앙 밝은 원 (하이라이트)
+    const innerGrad = ctx.createRadialGradient(cx - 30, cy - 30, 0, cx, cy, 80);
+    innerGrad.addColorStop(0, 'rgba(255,255,255,0.70)');
+    innerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = innerGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 우상단 작은 위성 원
+    const sat1x = cx + 145, sat1y = cy - 160;
+    const s1g = ctx.createLinearGradient(sat1x - 50, sat1y - 50, sat1x + 50, sat1y + 50);
+    s1g.addColorStop(0, '#FF6B6B');
+    s1g.addColorStop(1, '#FF8E53');
+    ctx.fillStyle = s1g;
+    ctx.shadowColor = 'rgba(255,107,107,0.4)';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(sat1x, sat1y, 48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 좌하단 중간 위성 원
+    const sat2x = cx - 160, sat2y = cy + 140;
+    const s2g = ctx.createLinearGradient(sat2x - 40, sat2y - 40, sat2x + 40, sat2y + 40);
+    s2g.addColorStop(0, '#6366F1');
+    s2g.addColorStop(1, '#A855F7');
+    ctx.fillStyle = s2g;
+    ctx.shadowColor = 'rgba(99,102,241,0.4)';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(sat2x, sat2y, 36, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 우하단 작은 위성 원
+    const sat3x = cx + 170, sat3y = cy + 110;
+    ctx.fillStyle = 'rgba(20,184,166,0.75)';
+    ctx.shadowColor = 'rgba(20,184,166,0.3)';
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(sat3x, sat3y, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 작은 도트 장식들
+    const dots = [
+        { x: cx - 220, y: cy - 80, r: 8, color: 'rgba(255,107,107,0.5)' },
+        { x: cx + 60, y: cy - 230, r: 6, color: 'rgba(99,102,241,0.5)' },
+        { x: cx + 230, y: cy - 30, r: 10, color: 'rgba(168,85,247,0.4)' },
+        { x: cx - 100, y: cy + 230, r: 7, color: 'rgba(20,184,166,0.5)' },
+        { x: cx + 100, y: cy + 220, r: 5, color: 'rgba(245,158,11,0.55)' },
+    ];
+    for (const d of dots) {
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 아이콘: 중앙에 별표(★) 형태로 선 그리기
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    // 심플 체크마크 모양
+    ctx.beginPath();
+    ctx.moveTo(cx - 38, cy + 5);
+    ctx.lineTo(cx - 12, cy + 32);
+    ctx.lineTo(cx + 42, cy - 30);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+}
+
+/** 본문용: 우상단 장식 아이콘 (번호에 따라 다른 모양) */
+function drawBodyDecoration(ctx: CanvasRenderingContext2D, slideNumber: number) {
+    const x = CANVAS_SIZE - 100, y = 170, r = 48;
+    const palette = ITEM_COLORS[(slideNumber - 2) % ITEM_COLORS.length];
+
+    // 바깥 링
+    ctx.strokeStyle = palette.border + '30';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 18, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 내부 원
+    const grad = ctx.createRadialGradient(x - 15, y - 15, 0, x, y, r);
+    grad.addColorStop(0, palette.badge + 'cc');
+    grad.addColorStop(1, palette.badge + '88');
+    ctx.fillStyle = grad;
+    ctx.shadowColor = palette.badge + '44';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 번호 텍스트
+    ctx.font = `bold 36px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${slideNumber - 1}`, x, y + 13);
+}
+
+/** 배경 도트 패턴 */
+function drawDotPattern(ctx: CanvasRenderingContext2D, color: string = 'rgba(99,102,241,0.06)') {
+    ctx.fillStyle = color;
+    const gap = 38;
+    for (let px = gap; px < CANVAS_SIZE; px += gap) {
+        for (let py = gap; py < CANVAS_SIZE; py += gap) {
+            ctx.beginPath();
+            ctx.arc(px, py, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+/** CTA 컨페티 장식 */
+function drawConfetti(ctx: CanvasRenderingContext2D) {
+    const shapes = [
+        { x: 120, y: 100, size: 14, color: 'rgba(255,107,107,0.6)', type: 'circle' },
+        { x: 200, y: 60,  size: 10, color: 'rgba(168,85,247,0.5)', type: 'rect' },
+        { x: 60,  y: 220, size: 8,  color: 'rgba(99,102,241,0.5)', type: 'circle' },
+        { x: 960, y: 80,  size: 12, color: 'rgba(20,184,166,0.6)', type: 'circle' },
+        { x: 1020,y: 200, size: 9,  color: 'rgba(245,158,11,0.55)', type: 'rect' },
+        { x: 920, y: 140, size: 7,  color: 'rgba(255,107,107,0.4)', type: 'circle' },
+        { x: 100, y: 950, size: 13, color: 'rgba(168,85,247,0.5)', type: 'circle' },
+        { x: 50,  y: 860, size: 8,  color: 'rgba(99,102,241,0.4)', type: 'rect' },
+        { x: 980, y: 900, size: 11, color: 'rgba(255,107,107,0.5)', type: 'circle' },
+        { x: 1000,y: 980, size: 7,  color: 'rgba(20,184,166,0.4)', type: 'circle' },
+        { x: 160, y: 170, size: 6,  color: 'rgba(245,158,11,0.5)', type: 'circle' },
+        { x: 880, y: 60,  size: 10, color: 'rgba(168,85,247,0.45)', type: 'rect' },
+    ];
+    for (const s of shapes) {
+        ctx.fillStyle = s.color;
+        if (s.type === 'circle') {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(Math.PI / 4);
+            ctx.fillRect(-s.size / 2, -s.size / 2, s.size, s.size);
+            ctx.restore();
+        }
+    }
+}
+
+// ─── 공통 헤더 / 푸터 ───────────────────────────────────────────────────────────
+
+function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number) {
+    const headerGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, 0);
+    headerGrad.addColorStop(0, COLORS.coral);
+    headerGrad.addColorStop(0.5, COLORS.violet);
+    headerGrad.addColorStop(1, COLORS.indigo);
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(0, 0, CANVAS_SIZE, 14);
+
+    ctx.font = `bold 22px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textDark;
+    ctx.textAlign = 'left';
+    ctx.fillText('Draft Ethan', 60, 74);
+
+    const badgeX = 60 + ctx.measureText('Draft Ethan').width + 12;
+    roundRect(ctx, badgeX, 53, 42, 26, 8);
+    const aiBg = ctx.createLinearGradient(badgeX, 0, badgeX + 42, 0);
+    aiBg.addColorStop(0, COLORS.coral);
+    aiBg.addColorStop(1, COLORS.violet);
+    ctx.fillStyle = aiBg;
+    ctx.fill();
+    ctx.font = `bold 14px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.textAlign = 'center';
+    ctx.fillText('AI', badgeX + 21, 70);
+
+    ctx.font = `bold 20px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textMuted;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${slideNumber} / ${totalSlides}`, CANVAS_SIZE - 60, 74);
+}
+
+function drawFooter(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number) {
+    ctx.strokeStyle = COLORS.cardBorder;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(60, CANVAS_SIZE - 110);
+    ctx.lineTo(CANVAS_SIZE - 60, CANVAS_SIZE - 110);
+    ctx.stroke();
+
+    const dotCount = totalSlides;
+    const dotStartX = (CANVAS_SIZE - dotCount * 24) / 2;
+    for (let i = 0; i < dotCount; i++) {
+        const dotX = dotStartX + i * 24 + 8;
+        if (i === slideNumber - 1) {
+            roundRect(ctx, dotX - 14, CANVAS_SIZE - 90, 28, 10, 5);
+            const pg = ctx.createLinearGradient(dotX - 14, 0, dotX + 14, 0);
+            pg.addColorStop(0, COLORS.coral);
+            pg.addColorStop(1, COLORS.violet);
+            ctx.fillStyle = pg;
+            ctx.fill();
+        } else {
+            ctx.fillStyle = COLORS.cardBorder;
+            ctx.beginPath();
+            ctx.arc(dotX, CANVAS_SIZE - 85, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    ctx.font = `18px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textLight;
+    ctx.textAlign = 'right';
+    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE - 60, CANVAS_SIZE - 55);
+}
+
+// ─── 슬라이드별 렌더 ────────────────────────────────────────────────────────────
+
+function drawCoverSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
+    // 배경
+    const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    bgGrad.addColorStop(0, '#FFFFFF');
+    bgGrad.addColorStop(1, '#F3F0FF');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // 좌측 상단 부드러운 블롭
+    const blob = ctx.createRadialGradient(0, 300, 0, 0, 300, 350);
+    blob.addColorStop(0, 'rgba(255,107,107,0.08)');
+    blob.addColorStop(1, 'rgba(255,107,107,0)');
+    ctx.fillStyle = blob;
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // 우측 추상 일러스트 (화면 절반 차지)
+    drawCoverIllustration(ctx);
+
+    // 카테고리 칩 태그
+    ctx.font = `bold 22px ${FONT_FAMILY}`;
+    const chipText = '자소서 합격 전략';
+    const chipW = ctx.measureText(chipText).width + 36;
+    roundRect(ctx, 60, 130, chipW, 44, 22);
+    const chipGrad = ctx.createLinearGradient(60, 0, 60 + chipW, 0);
+    chipGrad.addColorStop(0, COLORS.coral);
+    chipGrad.addColorStop(1, COLORS.violet);
+    ctx.fillStyle = chipGrad;
+    ctx.fill();
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.textAlign = 'left';
+    ctx.fillText(chipText, 78, 158);
+
+    // 메인 타이틀 — 왼쪽 절반에만 배치
+    ctx.font = `bold 78px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textDark;
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 8;
+    const titleLines = wrapText(ctx, stripEmojis(slide.title), 580);
+    let titleY = 275;
+    for (const line of titleLines) {
+        ctx.fillText(line, 60, titleY);
+        titleY += 96;
+    }
+    ctx.shadowBlur = 0;
+
+    // 언더라인
+    const lineGrad = ctx.createLinearGradient(60, 0, 340, 0);
+    lineGrad.addColorStop(0, COLORS.coral);
+    lineGrad.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = lineGrad;
+    ctx.fillRect(60, titleY - 62, 300, 6);
+
+    // 서브타이틀 카드
+    if (slide.subtitle) {
+        const subBoxY = titleY + 24;
+        const subBoxH = 110;
+        roundRect(ctx, 60, subBoxY, 600, subBoxH, 18);
+        ctx.fillStyle = COLORS.cardBg;
+        ctx.shadowColor = 'rgba(0,0,0,0.07)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 4;
+        ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+        roundRect(ctx, 60, subBoxY, 6, subBoxH, 3);
+        const barGrad = ctx.createLinearGradient(0, subBoxY, 0, subBoxY + subBoxH);
+        barGrad.addColorStop(0, COLORS.coral);
+        barGrad.addColorStop(1, COLORS.violet);
+        ctx.fillStyle = barGrad;
+        ctx.fill();
+
+        ctx.font = `26px ${FONT_FAMILY}`;
+        ctx.fillStyle = COLORS.textBody;
+        ctx.textAlign = 'left';
+        const subLines = wrapText(ctx, stripEmojis(slide.subtitle), 520);
+        let subY = subBoxY + 40;
+        for (const line of subLines) {
+            ctx.fillText(line, 94, subY);
+            subY += 40;
+        }
+    }
+
+    // 하단 키워드 칩 행
+    const chips = ['합격 전략', 'AI 맞춤 교정', '취준생 필수', '서류 통과'];
+    const chipRowY = CANVAS_SIZE - 210;
+    let chipX = 60;
+    chips.forEach((chip, idx) => {
+        const p = ITEM_COLORS[idx % ITEM_COLORS.length];
+        ctx.font = `bold 20px ${FONT_FAMILY}`;
+        const cw = ctx.measureText(chip).width + 32;
+        roundRect(ctx, chipX, chipRowY, cw, 42, 21);
+        ctx.fillStyle = p.bg;
+        ctx.fill();
+        roundRect(ctx, chipX, chipRowY, cw, 42, 21);
+        ctx.strokeStyle = p.border;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = p.text;
+        ctx.textAlign = 'left';
+        ctx.fillText(chip, chipX + 16, chipRowY + 28);
+        chipX += cw + 14;
+    });
+}
+
+function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
+    // 배경 + 도트 패턴
+    ctx.fillStyle = '#F8F7FF';
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    drawDotPattern(ctx);
+
+    // 상단 화이트 타이틀 영역
+    ctx.fillStyle = COLORS.cardBg;
+    ctx.fillRect(0, 14, CANVAS_SIZE, 210);
+
+    // 우상단 장식 원형 아이콘
+    drawBodyDecoration(ctx, slide.slideNumber);
+
+    // 타이틀
+    ctx.font = `bold 48px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textDark;
+    ctx.textAlign = 'left';
+    const titleClean = stripEmojis(slide.title);
+    ctx.fillText(titleClean, 60, 155);
+
+    // 언더라인
+    const underlineGrad = ctx.createLinearGradient(60, 0, 400, 0);
+    underlineGrad.addColorStop(0, COLORS.coral);
+    underlineGrad.addColorStop(1, COLORS.violet);
+    ctx.fillStyle = underlineGrad;
+    ctx.fillRect(60, 175, Math.min(ctx.measureText(titleClean).width, CANVAS_SIZE - 200), 5);
+
+    if (slide.subtitle) {
+        ctx.font = `24px ${FONT_FAMILY}`;
+        ctx.fillStyle = COLORS.textMuted;
+        ctx.fillText(stripEmojis(slide.subtitle), 60, 218);
+    }
+
+    // 카드 영역: 콘텐츠 균등 분배
+    const cardPadX = 60;
+    const cardWidth = CANVAS_SIZE - 120;
+    const tipH = 82;
+    const tipY = CANVAS_SIZE - 130 - tipH;
+    const availableH = tipY - 248 - 16;
+    const n = slide.contentLines.length;
+    const cardH = Math.max(110, Math.floor(availableH / Math.max(n, 1)) - 20);
+    let cardY = 248;
+
+    slide.contentLines.forEach((lineText, index) => {
+        const palette = ITEM_COLORS[index % ITEM_COLORS.length];
+        const cleanText = stripEmojis(lineText);
+
+        // 카드 배경
+        ctx.shadowColor = 'rgba(0,0,0,0.06)';
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 4;
+        roundRect(ctx, cardPadX, cardY, cardWidth, cardH, 20);
+        ctx.fillStyle = COLORS.cardBg;
+        ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+        // 좌측 컬러 바
+        roundRect(ctx, cardPadX, cardY, 8, cardH, 4);
+        ctx.fillStyle = palette.border;
+        ctx.fill();
+
+        // 번호 뱃지 (링 + 숫자)
+        const badgeCX = cardPadX + 58;
+        const badgeCY = cardY + cardH / 2;
+        ctx.fillStyle = palette.bg;
+        ctx.beginPath();
+        ctx.arc(badgeCX, badgeCY, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = palette.badge;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(badgeCX, badgeCY, 28, -Math.PI / 2, Math.PI);
+        ctx.stroke();
+        ctx.font = `bold 24px ${FONT_FAMILY}`;
+        ctx.fillStyle = palette.text;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${index + 1}`, badgeCX, badgeCY + 9);
+
+        // 본문 텍스트
+        ctx.font = `28px ${FONT_FAMILY}`;
+        ctx.fillStyle = COLORS.textBody;
+        ctx.textAlign = 'left';
+        const textLines = wrapText(ctx, cleanText, cardWidth - 130);
+        let textY = cardY + (cardH / 2) - ((textLines.length - 1) * 40) / 2 + 10;
+        for (const tl of textLines) {
+            ctx.fillText(tl, cardPadX + 106, textY);
+            textY += 40;
+        }
+
+        cardY += cardH + 20;
+    });
+
+    // POINT 팁 바 (항상 하단 고정)
+    roundRect(ctx, cardPadX, tipY, cardWidth, tipH, 16);
+    const tipGrad = ctx.createLinearGradient(cardPadX, 0, cardPadX + cardWidth, 0);
+    tipGrad.addColorStop(0, COLORS.coral);
+    tipGrad.addColorStop(1, COLORS.violet);
+    ctx.fillStyle = tipGrad;
+    ctx.fill();
+
+    // 팁 아이콘 (별 대신 ⚡ 느낌 삼각형)
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(cardPadX + 28, tipY + tipH / 2 - 16);
+    ctx.lineTo(cardPadX + 44, tipY + tipH / 2 + 16);
+    ctx.lineTo(cardPadX + 16, tipY + tipH / 2 + 4);
+    ctx.closePath();
+    ctx.fill();
+
+    const tipLabel = slide.highlightText ? stripEmojis(slide.highlightText) : '핵심 포인트를 기억하세요!';
+    ctx.font = `bold 26px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.textAlign = 'left';
+    ctx.fillText(`POINT  ${tipLabel}`, cardPadX + 58, tipY + 52);
+}
+
+function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
+    // 전체 그라데이션 배경
+    const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    bgGrad.addColorStop(0, '#FF6B6B');
+    bgGrad.addColorStop(0.5, '#A855F7');
+    bgGrad.addColorStop(1, '#6366F1');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // 컨페티 장식
+    drawConfetti(ctx);
+
+    // 큰 반투명 원 배경 장식들
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.beginPath(); ctx.arc(120, 120, 180, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.arc(CANVAS_SIZE - 100, CANVAS_SIZE - 120, 220, 0, Math.PI * 2); ctx.fill();
+
+    // 중앙 흰 카드
+    ctx.shadowColor = 'rgba(0,0,0,0.20)';
+    ctx.shadowBlur = 50;
+    ctx.shadowOffsetY = 12;
+    roundRect(ctx, 70, 120, CANVAS_SIZE - 140, 720, 36);
+    ctx.fillStyle = COLORS.cardBg;
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    // 카드 상단 포인트 바
+    ctx.beginPath();
+    ctx.moveTo(70 + 6, 120);
+    ctx.lineTo(70 + CANVAS_SIZE - 140 - 6, 120);
+    ctx.arcTo(70 + CANVAS_SIZE - 140, 120, 70 + CANVAS_SIZE - 140, 120 + 14, 6);
+    ctx.lineTo(70 + CANVAS_SIZE - 140, 120 + 14);
+    ctx.lineTo(70, 120 + 14);
+    ctx.arcTo(70, 120, 70 + 6, 120, 6);
+    ctx.closePath();
+    ctx.fillStyle = bgGrad;
+    ctx.fill();
+
+    // 카드 상단 별 장식
+    const starX = CANVAS_SIZE / 2, starY = 225;
+    for (let i = 0; i < 3; i++) {
+        const sx = starX - 40 + i * 40;
+        ctx.fillStyle = ITEM_COLORS[i].badge + 'cc';
+        ctx.beginPath();
+        ctx.arc(sx, starY, 10, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 타이틀
+    ctx.font = `bold 56px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textDark;
+    ctx.textAlign = 'center';
+    const titleLines = wrapText(ctx, stripEmojis(slide.title), CANVAS_SIZE - 220);
+    let titleY = 310;
+    for (const line of titleLines) {
+        ctx.fillText(line, CANVAS_SIZE / 2, titleY);
+        titleY += 72;
+    }
+
+    // 구분선
+    const divGrad = ctx.createLinearGradient(250, 0, CANVAS_SIZE - 250, 0);
+    divGrad.addColorStop(0, 'rgba(255,107,107,0)');
+    divGrad.addColorStop(0.3, COLORS.coral);
+    divGrad.addColorStop(0.7, COLORS.violet);
+    divGrad.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.fillStyle = divGrad;
+    ctx.fillRect(250, titleY - 10, CANVAS_SIZE - 500, 4);
+
+    // 리스트 아이템
+    let listY = titleY + 28;
+    slide.contentLines.forEach((item, idx) => {
+        const p = ITEM_COLORS[idx % ITEM_COLORS.length];
+        // 컬러 도트
+        ctx.fillStyle = p.badge;
+        ctx.beginPath();
+        ctx.arc(CANVAS_SIZE / 2 - 195, listY - 9, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = `28px ${FONT_FAMILY}`;
+        ctx.fillStyle = COLORS.textBody;
+        ctx.textAlign = 'left';
+        ctx.fillText(stripEmojis(item), CANVAS_SIZE / 2 - 175, listY);
+        listY += 52;
+    });
+
+    // CTA 버튼
+    const btnW = 520, btnH = 80;
+    const btnX = (CANVAS_SIZE - btnW) / 2;
+    const btnY = listY + 30;
+    roundRect(ctx, btnX, btnY, btnW, btnH, 40);
+    ctx.shadowColor = 'rgba(255,107,107,0.35)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 6;
+    const btnGrad = ctx.createLinearGradient(btnX, 0, btnX + btnW, 0);
+    btnGrad.addColorStop(0, COLORS.coral);
+    btnGrad.addColorStop(1, COLORS.violet);
+    ctx.fillStyle = btnGrad;
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    ctx.font = `bold 28px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textWhite;
+    ctx.textAlign = 'center';
+    ctx.fillText('지금 무료로 자소서 교정 받기', CANVAS_SIZE / 2, btnY + 52);
+
+    // URL
+    ctx.font = `20px ${FONT_FAMILY}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE / 2, CANVAS_SIZE - 50);
+}
+
+// ─── 공개 API ────────────────────────────────────────────────────────────────────
+
+export async function renderSlideImage(slide: CardNewsSlide, totalSlides: number = 5): Promise<Buffer> {
     const canvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
     const ctx = canvas.getContext('2d');
 
-    // 1. 베이스 어두운 배경 (Deep Slate Dark Slate)
-    ctx.fillStyle = '#090D1A'; 
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-    // 2. 다층 네뷸라 글로우 데코레이션 (Premium Glowing Effect)
-    // 2-1) 탑-레프트 사이언 글로우
-    const glowCyan = ctx.createRadialGradient(150, 150, 0, 150, 150, 400);
-    glowCyan.addColorStop(0, 'rgba(6, 182, 212, 0.12)'); 
-    glowCyan.addColorStop(1, 'rgba(6, 182, 212, 0)');
-    ctx.fillStyle = glowCyan;
-    ctx.beginPath();
-    ctx.arc(150, 150, 400, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 2-2) 센터-우측 인디고/바이올렛 글로우
-    const glowIndigo = ctx.createRadialGradient(850, 450, 50, 850, 450, 550);
-    glowIndigo.addColorStop(0, 'rgba(99, 102, 241, 0.18)'); 
-    glowIndigo.addColorStop(1, 'rgba(99, 102, 241, 0)');
-    ctx.fillStyle = glowIndigo;
-    ctx.beginPath();
-    ctx.arc(850, 450, 550, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 2-3) 바텀-레프트 핑크 글로우
-    const glowPink = ctx.createRadialGradient(100, 850, 0, 100, 850, 350);
-    glowPink.addColorStop(0, 'rgba(236, 72, 153, 0.08)'); 
-    glowPink.addColorStop(1, 'rgba(236, 72, 153, 0)');
-    ctx.fillStyle = glowPink;
-    ctx.beginPath();
-    ctx.arc(100, 850, 350, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Reset shadow/effects
-    ctx.shadowBlur = 0;
-
-    // 3. 상단 헤더 (유리모프 스타일 디자인 로고)
-    // 3-1) Logo Capsule Badge Background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(60, 60, 220, 50, 25);
-    ctx.fill();
-    ctx.stroke();
-
-    // Logo Capsule Text & Dot
-    ctx.fillStyle = '#6366F1'; // Blue dot
-    ctx.beginPath();
-    ctx.arc(90, 85, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.font = `bold 18px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#E2E8F0'; 
-    ctx.textAlign = 'left';
-    ctx.fillText('Draft Ethan AI', 112, 91);
-
-    // 3-2) Slide Number Capsule Badge
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.beginPath();
-    ctx.roundRect(CANVAS_SIZE - 150, 60, 90, 50, 25);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.font = `bold 18px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#94A3B8';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${slide.slideNumber} / ${totalSlides}`, CANVAS_SIZE - 105, 91);
-
-    // 4. 슬라이드 유형별 메인 콘텐츠 렌더링
     if (slide.type === 'COVER') {
-        // [표지 슬라이드]
-        // 상단 카테고리 태그
-        ctx.font = `bold 22px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#818CF8'; 
-        ctx.textAlign = 'left';
-        ctx.fillText('자소서 성공 전략 리포트', 80, 250);
-
-        // 태그 하단 미세 그라데이션 라인
-        const tagLineGrad = ctx.createLinearGradient(80, 0, 320, 0);
-        tagLineGrad.addColorStop(0, '#818CF8');
-        tagLineGrad.addColorStop(1, 'rgba(129, 140, 248, 0)');
-        ctx.fillStyle = tagLineGrad;
-        ctx.fillRect(80, 268, 240, 4);
-
-        // 메인 타이틀 (텍스트 드롭 섀도우)
-        ctx.font = `bold 56px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 4;
-        
-        const titleLines = wrapText(ctx, stripEmojis(slide.title), CANVAS_SIZE - 165);
-        let currentY = 360;
-        for (const line of titleLines) {
-            ctx.fillText(line, 80, currentY);
-            currentY += 78;
-        }
-        ctx.shadowBlur = 0; // Shadow reset
-        ctx.shadowOffsetY = 0;
-
-        // 서브타이틀 글라스모피즘 카드 박스
-        if (slide.subtitle) {
-            const boxY = currentY + 30;
-            const boxHeight = 150;
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.roundRect(80, boxY, CANVAS_SIZE - 160, boxHeight, 20);
-            ctx.fill();
-            ctx.stroke();
-
-            // 왼쪽 세로 컬러 바 데코레이션
-            ctx.fillStyle = '#06B6D4'; // Cyan
-            ctx.fillRect(80, boxY + 20, 5, boxHeight - 40);
-
-            ctx.font = `26px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#94A3B8';
-            const subLines = wrapText(ctx, stripEmojis(slide.subtitle), CANVAS_SIZE - 230);
-            let subY = boxY + 62;
-            for (const line of subLines) {
-                ctx.fillText(line, 115, subY);
-                subY += 42;
-            }
-        }
+        drawCoverSlide(ctx, slide);
+        drawHeader(ctx, slide.slideNumber, totalSlides);
+        drawFooter(ctx, slide.slideNumber, totalSlides);
     } else if (slide.type === 'BODY') {
-        // [본문 슬라이드]
-        ctx.font = `bold 44px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'left';
-        ctx.fillText(stripEmojis(slide.title), 80, 210);
-
-        // 타이틀 하단 데코레이션 쇼트 그라데이션
-        const accentGrad = ctx.createLinearGradient(80, 0, 200, 0);
-        accentGrad.addColorStop(0, '#6366F1'); // Indigo
-        accentGrad.addColorStop(1, '#06B6D4'); // Cyan
-        ctx.fillStyle = accentGrad;
-        ctx.fillRect(80, 232, 100, 6);
-
-        if (slide.subtitle) {
-            ctx.font = `24px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#64748B';
-            ctx.fillText(stripEmojis(slide.subtitle), 80, 280);
-        }
-
-        // 본문 컨텐츠 카드 박스
-        const contentBoxY = 320;
-        const contentBoxHeight = 550;
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(80, contentBoxY, CANVAS_SIZE - 160, contentBoxHeight, 24);
-        ctx.fill();
-        ctx.stroke();
-
-        let textY = contentBoxY + 68;
-        slide.contentLines.forEach((lineText, index) => {
-            // 1. 순번 인디고 그라데이션 원형 배지 그리기
-            const badgeY = textY - 8;
-            const badgeRadius = 18;
-            const badgeX = 135;
-
-            const badgeGrad = ctx.createLinearGradient(badgeX - badgeRadius, 0, badgeX + badgeRadius, 0);
-            badgeGrad.addColorStop(0, '#6366F1');
-            badgeGrad.addColorStop(1, '#4F46E5');
-            
-            ctx.fillStyle = badgeGrad;
-            ctx.beginPath();
-            ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 순번 이너 텍스트 
-            ctx.font = `bold 18px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${index + 1}`, badgeX, badgeY + 6);
-
-            // 2. 내용 텍스트 렌더링
-            ctx.font = `26px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#E2E8F0';
-            ctx.textAlign = 'left';
-            const lines = wrapText(ctx, stripEmojis(lineText), CANVAS_SIZE - 300);
-            let lineY = textY;
-            lines.forEach((l, lIdx) => {
-                ctx.fillText(l, 175, lineY);
-                if (lIdx < lines.length - 1) lineY += 38;
-            });
-
-            textY = Math.max(textY + 115, lineY + 70);
-        });
-
-        // 하단 가이드 팁
-        if (slide.highlightText) {
-            const tipBoxY = contentBoxY + contentBoxHeight - 65;
-            // 팁 미세 배경
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.06)';
-            ctx.beginPath();
-            ctx.roundRect(115, tipBoxY - 20, CANVAS_SIZE - 230, 60, 8);
-            ctx.fill();
-
-            ctx.fillStyle = '#10B981';
-            ctx.fillRect(115, tipBoxY - 20, 4, 60);
-
-            ctx.font = `bold 22px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#34D399'; 
-            ctx.fillText(`TIP: ${stripEmojis(slide.highlightText)}`, 135, tipBoxY + 18);
-        }
+        drawBodySlide(ctx, slide);
+        drawHeader(ctx, slide.slideNumber, totalSlides);
+        drawFooter(ctx, slide.slideNumber, totalSlides);
     } else if (slide.type === 'CTA') {
-        // [CTA 마무리 슬라이드]
-        ctx.font = `bold 52px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'center';
-        ctx.fillText(stripEmojis(slide.title), CANVAS_SIZE / 2, 280);
-
-        // 메인 CTA 버튼 렌더링 (그라데이션 및 부드러운 아웃라인 글로우)
-        const btnY = 380;
-        const btnWidth = 620;
-        const btnHeight = 96;
-        const btnX = (CANVAS_SIZE - btnWidth) / 2;
-
-        const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnWidth, btnY + btnHeight);
-        btnGrad.addColorStop(0, '#8B5CF6'); // Violet
-        btnGrad.addColorStop(1, '#6366F1'); // Indigo
-        ctx.fillStyle = btnGrad;
-        
-        ctx.beginPath();
-        ctx.roundRect(btnX, btnY, btnWidth, btnHeight, 48);
-        ctx.fill();
-
-        ctx.font = `bold 30px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText('Draft Ethan 무료 자소서 교정', CANVAS_SIZE / 2, btnY + 58);
-
-        // 하단 안내 서브 리스트
-        let listY = 560;
-        slide.contentLines.forEach((item) => {
-            // 커스텀 예쁜 포인트 도트 그리기
-            ctx.fillStyle = '#38BDF8';
-            ctx.beginPath();
-            ctx.arc(CANVAS_SIZE / 2 - 220, listY - 8, 5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.font = `26px ${FONT_FAMILY}`;
-            ctx.fillStyle = '#CBD5E1';
-            ctx.textAlign = 'left';
-            ctx.fillText(stripEmojis(item), CANVAS_SIZE / 2 - 200, listY);
-            listY += 65;
-        });
+        drawCtaSlide(ctx, slide);
+        ctx.font = `bold 20px ${FONT_FAMILY}`;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${slide.slideNumber} / ${totalSlides}`, CANVAS_SIZE - 60, 60);
+    } else {
+        drawBodySlide(ctx, slide);
+        drawHeader(ctx, slide.slideNumber, totalSlides);
+        drawFooter(ctx, slide.slideNumber, totalSlides);
     }
-
-    // 5. 하단 푸터 (브랜드 워터마크 & Swipe 안내)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(80, CANVAS_SIZE - 120);
-    ctx.lineTo(CANVAS_SIZE - 80, CANVAS_SIZE - 120);
-    ctx.stroke();
-
-    ctx.font = `20px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#475569';
-    ctx.textAlign = 'left';
-    ctx.fillText('Draft Ethan | AI Resume Proofreading Engine', 80, CANVAS_SIZE - 70);
-
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#6366F1';
-    ctx.fillText('Swipe ->', CANVAS_SIZE - 80, CANVAS_SIZE - 70);
 
     return canvas.toBuffer('image/png');
 }
 
-/**
- * 5장의 슬라이드 배열을 렌더링하여 지정된 출력 디렉터리에 로컬 PNG 파일들로 저장하고 저장된 파일 경로 배열 반환
- */
 export async function renderAllCardNewsSlides(
     slides: CardNewsSlide[],
     outputDir: string = path.join(process.cwd(), 'output_cardnews')
@@ -335,15 +695,13 @@ export async function renderAllCardNewsSlides(
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
-
     const generatedFilePaths: string[] = [];
     for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i];
-        const imageBuffer = await renderSlideImage(slide, slides.length);
+        const imageBuffer = await renderSlideImage(slides[i], slides.length);
         const filePath = path.join(outputDir, `slide_${i + 1}.png`);
         fs.writeFileSync(filePath, imageBuffer);
         generatedFilePaths.push(filePath);
+        console.log(`[ImageRenderer] 슬라이드 ${i + 1}/${slides.length} 렌더링 완료: ${filePath}`);
     }
-
     return generatedFilePaths;
 }

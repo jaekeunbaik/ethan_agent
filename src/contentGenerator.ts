@@ -55,10 +55,10 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     [출력 요구사항]
     1. thread_text: 스레드용 숏폼 텍스트 (위트 있고 가독성 좋은 300자 내외, 공감대 형성, 자연스러운 Draft Ethan URL 링크 포함: ${draftEthanUrl})
     2. insta_caption: 인스타그램 본문 캡션 (핵심 요약 + 유용한 팁 + CTA + 해시태그 포함 (#자소서 #합격자소서 #DraftEthan #취준생 #이직러 #취업성공 #AI자소서교정))
-    3. card_news_slides: 정확히 5장의 카드뉴스 슬라이드 텍스트 배열
-       - 1장 (COVER): 사람들의 호기심과 클릭을 유도하는 제목과 서브타이틀
-       - 2장~4장 (BODY): 실용적인 비포/애프터 예시나 자소서 꿀팁 3가지 (핵심 라인 2~3개)
-       - 5장 (CTA): "더 완벽한 자소서를 원한다면? Draft Ethan에서 무료 교정 받기!" 메시지와 액션 유도
+    3. card_news_slides: 정확히 3장의 카드뉴스 슬라이드 텍스트 배열
+       - 1장 (COVER): 사람들의 호기심과 클릭을 유도하는 강렬한 제목과 서브타이틀
+       - 2장 (BODY): 실용적인 핵심 꿀팁 3~4가지를 contentLines 배열로. 각 항목은 간결하고 임팩트 있게 1~2줄로. highlightText에 핵심 메시지 한 줄.
+       - 3장 (CTA): "더 완벽한 자소서를 원한다면? Draft Ethan에서 무료 교정 받기!" 메시지와 액션 유도. contentLines에 서비스 장점 3가지.
   `;
 
     const responseSchema: Schema = {
