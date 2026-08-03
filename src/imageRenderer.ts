@@ -35,83 +35,38 @@ interface ColorTheme {
     itemColors: Array<{ bg: string; border: string; badge: string; text: string }>;
 }
 
+// Draft Ethan 브랜드 시그니처 테마: Royal Blue & Modern Electric Violet
 const THEMES: ColorTheme[] = [
-    // 1. Coral Violet (기본 화사함)
     {
-        grad1: '#FF6B6B', grad2: '#A855F7', grad3: '#6366F1',
-        coral: '#FF6B6B', violet: '#A855F7', bgGradEnd: '#F3F0FF',
-        itemColors: [
-            { bg: '#FFF1F1', border: '#FF6B6B', badge: '#FF6B6B', text: '#FF6B6B' },
-            { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#A855F7' },
-            { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
-            { bg: '#F0FDF4', border: '#10B981', badge: '#10B981', text: '#10B981' },
-        ]
-    },
-    // 2. Mint & Teal (청량한 민트 에메랄드)
-    {
-        grad1: '#0D9488', grad2: '#0284C7', grad3: '#6366F1',
-        coral: '#0D9488', violet: '#0284C7', bgGradEnd: '#F0FDFA',
-        itemColors: [
-            { bg: '#CCFBF1', border: '#0D9488', badge: '#0D9488', text: '#0D9488' },
-            { bg: '#E0F2FE', border: '#0284C7', badge: '#0284C7', text: '#0284C7' },
-            { bg: '#EEF2FF', border: '#6366F1', badge: '#6366F1', text: '#6366F1' },
-            { bg: '#ECFDF5', border: '#10B981', badge: '#10B981', text: '#10B981' },
-        ]
-    },
-    // 3. Sunset Orange & Amber (열정적인 오렌지/골드)
-    {
-        grad1: '#F97316', grad2: '#EF4444', grad3: '#8B5CF6',
-        coral: '#F97316', violet: '#EF4444', bgGradEnd: '#FFF7ED',
-        itemColors: [
-            { bg: '#FFEDD5', border: '#F97316', badge: '#F97316', text: '#EA580C' },
-            { bg: '#FEE2E2', border: '#EF4444', badge: '#EF4444', text: '#DC2626' },
-            { bg: '#F3E8FF', border: '#8B5CF6', badge: '#8B5CF6', text: '#7C3AED' },
-            { bg: '#FEF3C7', border: '#F59E0B', badge: '#F59E0B', text: '#D97706' },
-        ]
-    },
-    // 4. Royal Blue & Violet (전문적이고 세련된 인디고)
-    {
-        grad1: '#2563EB', grad2: '#7C3AED', grad3: '#EC4899',
+        grad1: '#2563EB', grad2: '#7C3AED', grad3: '#06B6D4',
         coral: '#2563EB', violet: '#7C3AED', bgGradEnd: '#EFF6FF',
         itemColors: [
-            { bg: '#DBEAFE', border: '#2563EB', badge: '#2563EB', text: '#1D4ED8' },
-            { bg: '#EDE9FE', border: '#7C3AED', badge: '#7C3AED', text: '#6D28D9' },
-            { bg: '#FCE7F3', border: '#EC4899', badge: '#EC4899', text: '#DB2777' },
-            { bg: '#E0F2FE', border: '#0284C7', badge: '#0284C7', text: '#0369A1' },
-        ]
-    },
-    // 5. Rose & Peach (화사한 핑크 피치)
-    {
-        grad1: '#F43F5E', grad2: '#FB7185', grad3: '#A855F7',
-        coral: '#F43F5E', violet: '#FB7185', bgGradEnd: '#FFF1F2',
-        itemColors: [
-            { bg: '#FFE4E6', border: '#F43F5E', badge: '#F43F5E', text: '#E11D48' },
-            { bg: '#FECDD3', border: '#FB7185', badge: '#FB7185', text: '#E11D48' },
-            { bg: '#F5F3FF', border: '#A855F7', badge: '#A855F7', text: '#7E22CE' },
-            { bg: '#FFEDD5', border: '#F97316', badge: '#F97316', text: '#C2410C' },
+            { bg: '#EFF6FF', border: '#2563EB', badge: '#2563EB', text: '#1D4ED8' },
+            { bg: '#F5F3FF', border: '#7C3AED', badge: '#7C3AED', text: '#6D28D9' },
+            { bg: '#ECFDF5', border: '#10B981', badge: '#10B981', text: '#047857' },
+            { bg: '#FFF1F1', border: '#EF4444', badge: '#EF4444', text: '#DC2626' },
         ]
     }
 ];
 
 const FONT_FAMILY = '"NanumGothic", "NanumSquare", "NanumBarunGothic", "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
-// 랜덤 테마 선택
-let currentTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+let currentTheme = THEMES[0];
 
 export function setRandomTheme() {
-    currentTheme = THEMES[Math.floor(Math.random() * THEMES.length)];
+    currentTheme = THEMES[0];
 }
 
 const BASE_COLORS = {
     bg: '#FFFFFF',
-    bgSoft: '#F8F7FF',
-    textDark: '#1A1A2E',
-    textBody: '#374151',
-    textMuted: '#6B7280',
-    textLight: '#9CA3AF',
+    bgSoft: '#F8FAFC',
+    textDark: '#0F172A',
+    textBody: '#334155',
+    textMuted: '#64748B',
+    textLight: '#94A3B8',
     textWhite: '#FFFFFF',
     cardBg: '#FFFFFF',
-    cardBorder: '#E5E7EB',
+    cardBorder: '#E2E8F0',
 };
 
 const COLORS = new Proxy(BASE_COLORS, {
@@ -131,17 +86,7 @@ const COLORS = new Proxy(BASE_COLORS, {
     coral: string; violet: string; indigo: string; bgGradEnd: string;
 };
 
-const ITEM_COLORS = new Proxy([], {
-    get(target, prop: string) {
-        const index = Number(prop);
-        if (!isNaN(index)) {
-            const items = currentTheme.itemColors;
-            return items[index % items.length];
-        }
-        if (prop === 'length') return currentTheme.itemColors.length;
-        return (currentTheme.itemColors as any)[prop];
-    }
-}) as Array<{ bg: string; border: string; badge: string; text: string }>;
+const ITEM_COLORS = currentTheme.itemColors;
 
 function stripEmojis(text: string): string {
     if (!text) return '';
@@ -182,634 +127,456 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
     ctx.closePath();
 }
 
-// ─── 장식용 추상 일러스트 요소들 ────────────────────────────────────────────────
-
-/** 커버용: 우측 원형 클러스터 일러스트 */
-function drawCoverIllustration(ctx: CanvasRenderingContext2D) {
-    const cx = 820, cy = 520;
-
-    // 큰 반투명 배경 원 (연한 바이올렛)
-    const bigCircle = ctx.createRadialGradient(cx, cy, 0, cx, cy, 260);
-    bigCircle.addColorStop(0, 'rgba(168,85,247,0.10)');
-    bigCircle.addColorStop(1, 'rgba(168,85,247,0)');
-    ctx.fillStyle = bigCircle;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 260, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 바깥 링 (점선 느낌 = 여러 호)
-    ctx.strokeStyle = 'rgba(168,85,247,0.18)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([12, 10]);
-    ctx.beginPath();
-    ctx.arc(cx, cy, 230, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // 중간 그라데이션 원
-    const midGrad = ctx.createLinearGradient(cx - 160, cy - 160, cx + 160, cy + 160);
-    midGrad.addColorStop(0, 'rgba(255,107,107,0.55)');
-    midGrad.addColorStop(1, 'rgba(168,85,247,0.55)');
-    ctx.fillStyle = midGrad;
-    ctx.shadowColor = 'rgba(168,85,247,0.25)';
-    ctx.shadowBlur = 30;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 중앙 밝은 원 (하이라이트)
-    const innerGrad = ctx.createRadialGradient(cx - 30, cy - 30, 0, cx, cy, 80);
-    innerGrad.addColorStop(0, 'rgba(255,255,255,0.70)');
-    innerGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = innerGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 우상단 작은 위성 원
-    const sat1x = cx + 145, sat1y = cy - 160;
-    const s1g = ctx.createLinearGradient(sat1x - 50, sat1y - 50, sat1x + 50, sat1y + 50);
-    s1g.addColorStop(0, '#FF6B6B');
-    s1g.addColorStop(1, '#FF8E53');
-    ctx.fillStyle = s1g;
-    ctx.shadowColor = 'rgba(255,107,107,0.4)';
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(sat1x, sat1y, 48, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 좌하단 중간 위성 원
-    const sat2x = cx - 160, sat2y = cy + 140;
-    const s2g = ctx.createLinearGradient(sat2x - 40, sat2y - 40, sat2x + 40, sat2y + 40);
-    s2g.addColorStop(0, '#6366F1');
-    s2g.addColorStop(1, '#A855F7');
-    ctx.fillStyle = s2g;
-    ctx.shadowColor = 'rgba(99,102,241,0.4)';
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-    ctx.arc(sat2x, sat2y, 36, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 우하단 작은 위성 원
-    const sat3x = cx + 170, sat3y = cy + 110;
-    ctx.fillStyle = 'rgba(20,184,166,0.75)';
-    ctx.shadowColor = 'rgba(20,184,166,0.3)';
-    ctx.shadowBlur = 14;
-    ctx.beginPath();
-    ctx.arc(sat3x, sat3y, 24, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 작은 도트 장식들
-    const dots = [
-        { x: cx - 220, y: cy - 80, r: 8, color: 'rgba(255,107,107,0.5)' },
-        { x: cx + 60, y: cy - 230, r: 6, color: 'rgba(99,102,241,0.5)' },
-        { x: cx + 230, y: cy - 30, r: 10, color: 'rgba(168,85,247,0.4)' },
-        { x: cx - 100, y: cy + 230, r: 7, color: 'rgba(20,184,166,0.5)' },
-        { x: cx + 100, y: cy + 220, r: 5, color: 'rgba(245,158,11,0.55)' },
-    ];
-    for (const d of dots) {
-        ctx.fillStyle = d.color;
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // 아이콘: 중앙에 별표(★) 형태로 선 그리기
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    // 심플 체크마크 모양
-    ctx.beginPath();
-    ctx.moveTo(cx - 38, cy + 5);
-    ctx.lineTo(cx - 12, cy + 32);
-    ctx.lineTo(cx + 42, cy - 30);
-    ctx.stroke();
-    ctx.lineCap = 'butt';
-}
-
-/** 본문용: 우상단 장식 아이콘 (번호에 따라 다른 모양) */
-function drawBodyDecoration(ctx: CanvasRenderingContext2D, slideNumber: number) {
-    const x = CANVAS_SIZE - 100, y = 170, r = 48;
-    const palette = ITEM_COLORS[(slideNumber - 2) % ITEM_COLORS.length];
-
-    // 바깥 링
-    ctx.strokeStyle = palette.border + '30';
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.arc(x, y, r + 18, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // 내부 원
-    const grad = ctx.createRadialGradient(x - 15, y - 15, 0, x, y, r);
-    grad.addColorStop(0, palette.badge + 'cc');
-    grad.addColorStop(1, palette.badge + '88');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = palette.badge + '44';
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 번호 텍스트
-    ctx.font = `bold 36px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${slideNumber - 1}`, x, y + 13);
-}
-
-/** 배경 도트 패턴 */
-function drawDotPattern(ctx: CanvasRenderingContext2D, color: string = 'rgba(99,102,241,0.06)') {
-    ctx.fillStyle = color;
-    const gap = 38;
-    for (let px = gap; px < CANVAS_SIZE; px += gap) {
-        for (let py = gap; py < CANVAS_SIZE; py += gap) {
-            ctx.beginPath();
-            ctx.arc(px, py, 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-}
-
-/** CTA 컨페티 장식 */
-function drawConfetti(ctx: CanvasRenderingContext2D) {
-    const shapes = [
-        { x: 120, y: 100, size: 14, color: 'rgba(255,107,107,0.6)', type: 'circle' },
-        { x: 200, y: 60,  size: 10, color: 'rgba(168,85,247,0.5)', type: 'rect' },
-        { x: 60,  y: 220, size: 8,  color: 'rgba(99,102,241,0.5)', type: 'circle' },
-        { x: 960, y: 80,  size: 12, color: 'rgba(20,184,166,0.6)', type: 'circle' },
-        { x: 1020,y: 200, size: 9,  color: 'rgba(245,158,11,0.55)', type: 'rect' },
-        { x: 920, y: 140, size: 7,  color: 'rgba(255,107,107,0.4)', type: 'circle' },
-        { x: 100, y: 950, size: 13, color: 'rgba(168,85,247,0.5)', type: 'circle' },
-        { x: 50,  y: 860, size: 8,  color: 'rgba(99,102,241,0.4)', type: 'rect' },
-        { x: 980, y: 900, size: 11, color: 'rgba(255,107,107,0.5)', type: 'circle' },
-        { x: 1000,y: 980, size: 7,  color: 'rgba(20,184,166,0.4)', type: 'circle' },
-        { x: 160, y: 170, size: 6,  color: 'rgba(245,158,11,0.5)', type: 'circle' },
-        { x: 880, y: 60,  size: 10, color: 'rgba(168,85,247,0.45)', type: 'rect' },
-    ];
-    for (const s of shapes) {
-        ctx.fillStyle = s.color;
-        if (s.type === 'circle') {
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            ctx.save();
-            ctx.translate(s.x, s.y);
-            ctx.rotate(Math.PI / 4);
-            ctx.fillRect(-s.size / 2, -s.size / 2, s.size, s.size);
-            ctx.restore();
-        }
-    }
-}
-
 // ─── 공통 헤더 / 푸터 ───────────────────────────────────────────────────────────
 
-function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number) {
+function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number, isDark: boolean = false) {
+    // 상단 멀티 컬러 그라데이션 포인트 바
     const headerGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, 0);
-    headerGrad.addColorStop(0, COLORS.coral);
-    headerGrad.addColorStop(0.5, COLORS.violet);
-    headerGrad.addColorStop(1, COLORS.indigo);
+    headerGrad.addColorStop(0, '#2563EB');
+    headerGrad.addColorStop(0.5, '#7C3AED');
+    headerGrad.addColorStop(1, '#06B6D4');
     ctx.fillStyle = headerGrad;
     ctx.fillRect(0, 0, CANVAS_SIZE, 14);
 
-    ctx.font = `bold 22px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textDark;
+    // 브랜드 서비스 로고
+    ctx.font = `bold 24px ${FONT_FAMILY}`;
+    ctx.fillStyle = isDark ? '#FFFFFF' : COLORS.textDark;
     ctx.textAlign = 'left';
     ctx.fillText('Draft Ethan', 60, 74);
 
+    // AI 뱃지
     const badgeX = 60 + ctx.measureText('Draft Ethan').width + 12;
-    roundRect(ctx, badgeX, 53, 42, 26, 8);
-    const aiBg = ctx.createLinearGradient(badgeX, 0, badgeX + 42, 0);
-    aiBg.addColorStop(0, COLORS.coral);
-    aiBg.addColorStop(1, COLORS.violet);
+    roundRect(ctx, badgeX, 53, 44, 26, 8);
+    const aiBg = ctx.createLinearGradient(badgeX, 0, badgeX + 44, 0);
+    aiBg.addColorStop(0, '#2563EB');
+    aiBg.addColorStop(1, '#7C3AED');
     ctx.fillStyle = aiBg;
     ctx.fill();
     ctx.font = `bold 14px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textWhite;
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('AI', badgeX + 21, 70);
+    ctx.fillText('AI', badgeX + 22, 70);
 
-    ctx.font = `bold 20px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textMuted;
+    // 페이지 번호
+    ctx.font = `bold 22px ${FONT_FAMILY}`;
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : COLORS.textMuted;
     ctx.textAlign = 'right';
     ctx.fillText(`${slideNumber} / ${totalSlides}`, CANVAS_SIZE - 60, 74);
 }
 
-function drawFooter(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number) {
-    ctx.strokeStyle = COLORS.cardBorder;
+function drawFooter(ctx: CanvasRenderingContext2D, slideNumber: number, totalSlides: number, isDark: boolean = false) {
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.15)' : COLORS.cardBorder;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(60, CANVAS_SIZE - 110);
-    ctx.lineTo(CANVAS_SIZE - 60, CANVAS_SIZE - 110);
+    ctx.moveTo(60, CANVAS_SIZE - 100);
+    ctx.lineTo(CANVAS_SIZE - 60, CANVAS_SIZE - 100);
     ctx.stroke();
 
     const dotCount = totalSlides;
-    const dotStartX = (CANVAS_SIZE - dotCount * 24) / 2;
+    const dotStartX = (CANVAS_SIZE - dotCount * 28) / 2;
     for (let i = 0; i < dotCount; i++) {
-        const dotX = dotStartX + i * 24 + 8;
+        const dotX = dotStartX + i * 28 + 10;
         if (i === slideNumber - 1) {
-            roundRect(ctx, dotX - 14, CANVAS_SIZE - 90, 28, 10, 5);
-            const pg = ctx.createLinearGradient(dotX - 14, 0, dotX + 14, 0);
-            pg.addColorStop(0, COLORS.coral);
-            pg.addColorStop(1, COLORS.violet);
+            roundRect(ctx, dotX - 16, CANVAS_SIZE - 82, 32, 10, 5);
+            const pg = ctx.createLinearGradient(dotX - 16, 0, dotX + 16, 0);
+            pg.addColorStop(0, '#2563EB');
+            pg.addColorStop(1, '#7C3AED');
             ctx.fillStyle = pg;
             ctx.fill();
         } else {
-            ctx.fillStyle = COLORS.cardBorder;
+            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.25)' : COLORS.cardBorder;
             ctx.beginPath();
-            ctx.arc(dotX, CANVAS_SIZE - 85, 5, 0, Math.PI * 2);
+            ctx.arc(dotX, CANVAS_SIZE - 77, 5, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
-    ctx.font = `18px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textLight;
+    ctx.font = `bold 18px ${FONT_FAMILY}`;
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.6)' : COLORS.textMuted;
     ctx.textAlign = 'right';
-    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE - 60, CANVAS_SIZE - 55);
+    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE - 60, CANVAS_SIZE - 45);
 }
 
-// ─── 슬라이드별 렌더 ────────────────────────────────────────────────────────────
+// ─── 1. 커버 슬라이드 (Cover Slide - Modern Dark Hero) ──────────────────────────
 
 function drawCoverSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
-    // 배경
+    // 세련된 프리미엄 다크-바이올렛 배경
     const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    bgGrad.addColorStop(0, '#FFFFFF');
-    bgGrad.addColorStop(1, '#F3F0FF');
+    bgGrad.addColorStop(0, '#0F172A');
+    bgGrad.addColorStop(0.5, '#1E1B4B');
+    bgGrad.addColorStop(1, '#312E81');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 좌측 상단 부드러운 블롭
-    const blob = ctx.createRadialGradient(0, 300, 0, 0, 300, 350);
-    blob.addColorStop(0, 'rgba(255,107,107,0.08)');
-    blob.addColorStop(1, 'rgba(255,107,107,0)');
-    ctx.fillStyle = blob;
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    // 네온 글루밍 오라 (빛나는 원형 그래디언트)
+    const glow1 = ctx.createRadialGradient(200, 200, 0, 200, 200, 400);
+    glow1.addColorStop(0, 'rgba(37,99,235,0.35)');
+    glow1.addColorStop(1, 'rgba(37,99,235,0)');
+    ctx.fillStyle = glow1; ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 우측 추상 일러스트 (화면 절반 차지)
-    drawCoverIllustration(ctx);
+    const glow2 = ctx.createRadialGradient(900, 800, 0, 900, 800, 450);
+    glow2.addColorStop(0, 'rgba(124,58,237,0.35)');
+    glow2.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = glow2; ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 카테고리 칩 태그
+    // 헤더/푸터 (다크모드 지원)
+    drawHeader(ctx, slide.slideNumber, 3, true);
+    drawFooter(ctx, slide.slideNumber, 3, true);
+
+    // 카테고리 칩
     ctx.font = `bold 22px ${FONT_FAMILY}`;
-    const chipText = '자소서 합격 전략';
-    const chipW = ctx.measureText(chipText).width + 36;
-    roundRect(ctx, 60, 130, chipW, 44, 22);
+    const chipText = '⚡ 3초 AI 자소서 교정리포트';
+    const chipW = ctx.measureText(chipText).width + 40;
+    roundRect(ctx, 60, 140, chipW, 48, 24);
     const chipGrad = ctx.createLinearGradient(60, 0, 60 + chipW, 0);
-    chipGrad.addColorStop(0, COLORS.coral);
-    chipGrad.addColorStop(1, COLORS.violet);
-    ctx.fillStyle = chipGrad;
-    ctx.fill();
-    ctx.fillStyle = COLORS.textWhite;
+    chipGrad.addColorStop(0, '#2563EB');
+    chipGrad.addColorStop(1, '#7C3AED');
+    ctx.fillStyle = chipGrad; ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'left';
-    ctx.fillText(chipText, 78, 158);
+    ctx.fillText(chipText, 80, 171);
 
-    // 메인 타이틀 — 왼쪽 절반에만 배치
-    ctx.font = `bold 78px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textDark;
-    ctx.shadowColor = 'rgba(0,0,0,0.06)';
-    ctx.shadowBlur = 8;
-    const titleLines = wrapText(ctx, stripEmojis(slide.title), 580);
-    let titleY = 275;
+    // 메인 타이틀 (강렬한 80px 폰트)
+    ctx.font = `bold 76px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 16;
+    const titleClean = stripEmojis(slide.title);
+    const titleLines = wrapText(ctx, titleClean, CANVAS_SIZE - 120);
+    let titleY = 320;
     for (const line of titleLines) {
         ctx.fillText(line, 60, titleY);
-        titleY += 96;
+        titleY += 98;
     }
     ctx.shadowBlur = 0;
 
-    // 언더라인
-    const lineGrad = ctx.createLinearGradient(60, 0, 340, 0);
-    lineGrad.addColorStop(0, COLORS.coral);
-    lineGrad.addColorStop(1, 'rgba(168,85,247,0)');
-    ctx.fillStyle = lineGrad;
-    ctx.fillRect(60, titleY - 62, 300, 6);
-
-    // 서브타이틀 카드
+    // 강조 서브 카드
     if (slide.subtitle) {
-        const subBoxY = titleY + 24;
-        const subBoxH = 110;
-        roundRect(ctx, 60, subBoxY, 600, subBoxH, 18);
-        ctx.fillStyle = COLORS.cardBg;
-        ctx.shadowColor = 'rgba(0,0,0,0.07)';
-        ctx.shadowBlur = 16;
-        ctx.shadowOffsetY = 4;
-        ctx.fill();
-        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        const subBoxY = titleY + 30;
+        const subBoxH = 140;
+        roundRect(ctx, 60, subBoxY, CANVAS_SIZE - 120, subBoxH, 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.fill(); ctx.stroke();
 
-        roundRect(ctx, 60, subBoxY, 6, subBoxH, 3);
+        roundRect(ctx, 60, subBoxY, 8, subBoxH, 4);
         const barGrad = ctx.createLinearGradient(0, subBoxY, 0, subBoxY + subBoxH);
-        barGrad.addColorStop(0, COLORS.coral);
-        barGrad.addColorStop(1, COLORS.violet);
-        ctx.fillStyle = barGrad;
-        ctx.fill();
+        barGrad.addColorStop(0, '#38BDF8');
+        barGrad.addColorStop(1, '#A855F7');
+        ctx.fillStyle = barGrad; ctx.fill();
 
-        ctx.font = `26px ${FONT_FAMILY}`;
-        ctx.fillStyle = COLORS.textBody;
-        ctx.textAlign = 'left';
-        const subLines = wrapText(ctx, stripEmojis(slide.subtitle), 520);
-        let subY = subBoxY + 40;
+        ctx.font = `28px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#E2E8F0';
+        const subLines = wrapText(ctx, stripEmojis(slide.subtitle), CANVAS_SIZE - 180);
+        let subY = subBoxY + 52;
         for (const line of subLines) {
             ctx.fillText(line, 94, subY);
-            subY += 40;
+            subY += 44;
         }
     }
 
-    // 하단 키워드 칩 행
-    const chips = ['합격 전략', 'AI 맞춤 교정', '취준생 필수', '서류 통과'];
-    const chipRowY = CANVAS_SIZE - 210;
-    let chipX = 60;
-    chips.forEach((chip, idx) => {
-        const p = ITEM_COLORS[idx % ITEM_COLORS.length];
+    // 하단 키워드 태그들
+    const tags = ['#자소서첨삭', '#AI교정', '#서류합격', '#DraftEthan'];
+    let tagX = 60;
+    const tagY = CANVAS_SIZE - 170;
+    tags.forEach(tag => {
         ctx.font = `bold 20px ${FONT_FAMILY}`;
-        const cw = ctx.measureText(chip).width + 32;
-        roundRect(ctx, chipX, chipRowY, cw, 42, 21);
-        ctx.fillStyle = p.bg;
+        const tw = ctx.measureText(tag).width + 32;
+        roundRect(ctx, tagX, tagY, tw, 42, 21);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
         ctx.fill();
-        roundRect(ctx, chipX, chipRowY, cw, 42, 21);
-        ctx.strokeStyle = p.border;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1;
         ctx.stroke();
-        ctx.fillStyle = p.text;
-        ctx.textAlign = 'left';
-        ctx.fillText(chip, chipX + 16, chipRowY + 28);
-        chipX += cw + 14;
+        ctx.fillStyle = '#93C5FD';
+        ctx.fillText(tag, tagX + 16, tagY + 28);
+        tagX += tw + 14;
     });
 }
 
+// ─── 2. 본문 슬라이드 (Before vs After Diff Card UI) ───────────────────────────
+
 function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
-    // 배경 + 도트 패턴
-    ctx.fillStyle = '#F8F7FF';
+    // 배경
+    ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    drawDotPattern(ctx);
 
-    // 상단 화이트 타이틀 영역
-    ctx.fillStyle = COLORS.cardBg;
-    ctx.fillRect(0, 14, CANVAS_SIZE, 210);
+    drawHeader(ctx, slide.slideNumber, 3, false);
+    drawFooter(ctx, slide.slideNumber, 3, false);
 
-    // 우상단 장식 원형 아이콘
-    drawBodyDecoration(ctx, slide.slideNumber);
-
-    // 타이틀
-    ctx.font = `bold 48px ${FONT_FAMILY}`;
+    // 상단 섹션 제목
+    ctx.font = `bold 46px ${FONT_FAMILY}`;
     ctx.fillStyle = COLORS.textDark;
     ctx.textAlign = 'left';
-    const titleClean = stripEmojis(slide.title);
-    ctx.fillText(titleClean, 60, 155);
+    ctx.fillText(stripEmojis(slide.title), 60, 150);
 
     // 언더라인
-    const underlineGrad = ctx.createLinearGradient(60, 0, 400, 0);
-    underlineGrad.addColorStop(0, COLORS.coral);
-    underlineGrad.addColorStop(1, COLORS.violet);
-    ctx.fillStyle = underlineGrad;
-    ctx.fillRect(60, 175, Math.min(ctx.measureText(titleClean).width, CANVAS_SIZE - 200), 5);
+    const uGrad = ctx.createLinearGradient(60, 0, 380, 0);
+    uGrad.addColorStop(0, '#2563EB');
+    uGrad.addColorStop(1, '#7C3AED');
+    ctx.fillStyle = uGrad;
+    ctx.fillRect(60, 168, 300, 5);
 
     if (slide.subtitle) {
         ctx.font = `24px ${FONT_FAMILY}`;
         ctx.fillStyle = COLORS.textMuted;
-        ctx.fillText(stripEmojis(slide.subtitle), 60, 218);
+        ctx.fillText(stripEmojis(slide.subtitle), 60, 212);
     }
 
-    // 카드 영역: 콘텐츠 균등 분배
-    const cardPadX = 60;
-    const cardWidth = CANVAS_SIZE - 120;
-    const tipH = 82;
-    const tipY = CANVAS_SIZE - 130 - tipH;
-    const availableH = tipY - 248 - 16;
-    const n = slide.contentLines.length;
-    const cardH = Math.max(110, Math.floor(availableH / Math.max(n, 1)) - 20);
-    let cardY = 248;
+    const cardX = 60;
+    const cardW = CANVAS_SIZE - 120;
 
-    slide.contentLines.forEach((lineText, index) => {
-        let palette = ITEM_COLORS[index % ITEM_COLORS.length];
-        let cardBgColor = COLORS.cardBg;
-        let badgeLabel = `${index + 1}`;
-        const cleanText = stripEmojis(lineText);
+    // Content lines 중 Before, After, Score 추출
+    let beforeText = '';
+    let afterText = '';
+    let scoreText = '';
 
-        // Before / After / Score 라인 특수 커스텀 스타일
-        if (/before/i.test(cleanText)) {
-            palette = { bg: '#FEE2E2', border: '#EF4444', badge: '#EF4444', text: '#DC2626' };
-            cardBgColor = '#FFF5F5';
-            badgeLabel = 'X';
-        } else if (/after/i.test(cleanText)) {
-            palette = { bg: '#F5F3FF', border: '#7C3AED', badge: '#7C3AED', text: '#6D28D9' };
-            cardBgColor = '#FAF5FF';
-            badgeLabel = 'AI';
-        } else if (/점수|\+|📈|적합성|논리성/i.test(cleanText)) {
-            palette = { bg: '#DBEAFE', border: '#2563EB', badge: '#2563EB', text: '#1E40AF' };
-            cardBgColor = '#F0F9FF';
-            badgeLabel = '📊';
-        }
-
-        // 카드 배경
-        ctx.shadowColor = 'rgba(0,0,0,0.06)';
-        ctx.shadowBlur = 14;
-        ctx.shadowOffsetY = 4;
-        roundRect(ctx, cardPadX, cardY, cardWidth, cardH, 20);
-        ctx.fillStyle = cardBgColor;
-        ctx.fill();
-        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-
-        // 좌측 컬러 바
-        roundRect(ctx, cardPadX, cardY, 8, cardH, 4);
-        ctx.fillStyle = palette.border;
-        ctx.fill();
-
-        // 번호 / 심볼 뱃지 (링 + 텍스트)
-        const badgeCX = cardPadX + 58;
-        const badgeCY = cardY + cardH / 2;
-        ctx.fillStyle = palette.bg;
-        ctx.beginPath();
-        ctx.arc(badgeCX, badgeCY, 28, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = palette.badge;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(badgeCX, badgeCY, 28, -Math.PI / 2, Math.PI);
-        ctx.stroke();
-        ctx.font = `bold ${badgeLabel.length > 2 ? 18 : 22}px ${FONT_FAMILY}`;
-        ctx.fillStyle = palette.text;
-        ctx.textAlign = 'center';
-        ctx.fillText(badgeLabel, badgeCX, badgeCY + 7);
-
-        // 본문 텍스트
-        ctx.font = `28px ${FONT_FAMILY}`;
-        ctx.fillStyle = COLORS.textBody;
-        ctx.textAlign = 'left';
-        const textLines = wrapText(ctx, cleanText, cardWidth - 130);
-        let textY = cardY + (cardH / 2) - ((textLines.length - 1) * 40) / 2 + 10;
-        for (const tl of textLines) {
-            ctx.fillText(tl, cardPadX + 106, textY);
-            textY += 40;
-        }
-
-        cardY += cardH + 20;
+    slide.contentLines.forEach(line => {
+        if (/before/i.test(line)) beforeText = line.replace(/before:\s*/i, '').trim();
+        else if (/after/i.test(line)) afterText = line.replace(/after:\s*/i, '').trim();
+        else scoreText = line.trim();
     });
 
-    // POINT 팁 바 (항상 하단 고정)
-    roundRect(ctx, cardPadX, tipY, cardWidth, tipH, 16);
-    const tipGrad = ctx.createLinearGradient(cardPadX, 0, cardPadX + cardWidth, 0);
-    tipGrad.addColorStop(0, COLORS.coral);
-    tipGrad.addColorStop(1, COLORS.violet);
-    ctx.fillStyle = tipGrad;
-    ctx.fill();
+    if (beforeText && afterText) {
+        // [Before 카드 - 서류 탈락]
+        const beforeY = 240;
+        const beforeH = 210;
+        roundRect(ctx, cardX, beforeY, cardW, beforeH, 24);
+        ctx.fillStyle = '#FFF5F5';
+        ctx.strokeStyle = '#FECDD3';
+        ctx.lineWidth = 2;
+        ctx.fill(); ctx.stroke();
 
-    // 팁 아이콘 (별 대신 ⚡ 느낌 삼각형)
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath();
-    ctx.moveTo(cardPadX + 28, tipY + tipH / 2 - 16);
-    ctx.lineTo(cardPadX + 44, tipY + tipH / 2 + 16);
-    ctx.lineTo(cardPadX + 16, tipY + tipH / 2 + 4);
-    ctx.closePath();
-    ctx.fill();
+        // Before 뱃지 (경고 Red)
+        roundRect(ctx, cardX + 24, beforeY + 24, 150, 40, 20);
+        ctx.fillStyle = '#EF4444'; ctx.fill();
+        ctx.font = `bold 18px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText('❌ BEFORE (탈락)', cardX + 99, beforeY + 50);
 
-    const tipLabel = slide.highlightText ? stripEmojis(slide.highlightText) : '핵심 포인트를 기억하세요!';
-    ctx.font = `bold 26px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textWhite;
-    ctx.textAlign = 'left';
-    ctx.fillText(`POINT  ${tipLabel}`, cardPadX + 58, tipY + 52);
+        ctx.font = `26px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#991B1B';
+        ctx.textAlign = 'left';
+        const bLines = wrapText(ctx, stripEmojis(beforeText), cardW - 60);
+        let bY = beforeY + 105;
+        for (const bl of bLines) {
+            ctx.fillText(bl, cardX + 30, bY);
+            bY += 38;
+        }
+
+        // [중간 AI 변환 뱃지]
+        const midY = 468;
+        roundRect(ctx, CANVAS_SIZE / 2 - 190, midY, 380, 48, 24);
+        const midGrad = ctx.createLinearGradient(CANVAS_SIZE / 2 - 190, 0, CANVAS_SIZE / 2 + 190, 0);
+        midGrad.addColorStop(0, '#2563EB');
+        midGrad.addColorStop(1, '#7C3AED');
+        ctx.fillStyle = midGrad;
+        ctx.shadowColor = 'rgba(124,58,237,0.3)'; ctx.shadowBlur = 12;
+        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.font = `bold 20px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ Draft Ethan AI 1:1 맞춤 교정', CANVAS_SIZE / 2, midY + 31);
+
+        // [After 카드 - 대기업 합격]
+        const afterY = 535;
+        const afterH = 220;
+        roundRect(ctx, cardX, afterY, cardW, afterH, 24);
+        ctx.fillStyle = '#F5F3FF';
+        ctx.strokeStyle = '#7C3AED';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = 'rgba(124,58,237,0.15)'; ctx.shadowBlur = 16;
+        ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+
+        // After 뱃지 (보라 Violet)
+        roundRect(ctx, cardX + 24, afterY + 24, 150, 40, 20);
+        ctx.fillStyle = '#7C3AED'; ctx.fill();
+        ctx.font = `bold 18px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText('✅ AFTER (합격)', cardX + 99, afterY + 50);
+
+        ctx.font = `bold 28px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#4C1D95';
+        ctx.textAlign = 'left';
+        const aLines = wrapText(ctx, stripEmojis(afterText), cardW - 60);
+        let aY = afterY + 110;
+        for (const al of aLines) {
+            ctx.fillText(al, cardX + 30, aY);
+            aY += 40;
+        }
+
+        // [하단 스코어 상승 배너]
+        const scoreY = 775;
+        roundRect(ctx, cardX, scoreY, cardW, 80, 20);
+        const scoreGrad = ctx.createLinearGradient(cardX, 0, cardX + cardW, 0);
+        scoreGrad.addColorStop(0, '#EFF6FF');
+        scoreGrad.addColorStop(1, '#DBEAFE');
+        ctx.fillStyle = scoreGrad;
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 2;
+        ctx.fill(); ctx.stroke();
+
+        ctx.font = `bold 24px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#1E40AF';
+        ctx.textAlign = 'center';
+        ctx.fillText(stripEmojis(scoreText || '📈 직무 적합성 +35pt | 논리성 +40pt 상승!'), CANVAS_SIZE / 2, scoreY + 49);
+
+    } else {
+        // 일반 본문 리스트
+        let curY = 250;
+        slide.contentLines.forEach((lineText, idx) => {
+            roundRect(ctx, cardX, curY, cardW, 130, 20);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.lineWidth = 2;
+            ctx.fill(); ctx.stroke();
+
+            roundRect(ctx, cardX + 24, curY + 35, 60, 60, 16);
+            ctx.fillStyle = idx === 0 ? '#2563EB' : (idx === 1 ? '#7C3AED' : '#06B6D4');
+            ctx.fill();
+            ctx.font = `bold 28px ${FONT_FAMILY}`;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${idx + 1}`, cardX + 54, curY + 74);
+
+            ctx.font = `26px ${FONT_FAMILY}`;
+            ctx.fillStyle = COLORS.textBody;
+            ctx.textAlign = 'left';
+            ctx.fillText(stripEmojis(lineText), cardX + 104, curY + 74);
+
+            curY += 150;
+        });
+    }
+
+    // POINT 핵심 하단 포인트 팁
+    const tipY = 875;
+    roundRect(ctx, cardX, tipY, cardW, 75, 20);
+    const tipGrad = ctx.createLinearGradient(cardX, 0, cardX + cardW, 0);
+    tipGrad.addColorStop(0, '#2563EB');
+    tipGrad.addColorStop(1, '#7C3AED');
+    ctx.fillStyle = tipGrad; ctx.fill();
+
+    ctx.font = `bold 24px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    const highlight = slide.highlightText ? stripEmojis(slide.highlightText) : '추상적인 표현 대신 직무 성과와 수치를 명시하세요!';
+    ctx.fillText(`💡 TIP: ${highlight}`, CANVAS_SIZE / 2, tipY + 46);
 }
 
+// ─── 3. CTA 슬라이드 (CTA Slide - Premium Conversion Card) ──────────────────────
+
 function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
-    // 전체 그라데이션 배경
+    // 배경
     const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    bgGrad.addColorStop(0, '#FF6B6B');
-    bgGrad.addColorStop(0.5, '#A855F7');
-    bgGrad.addColorStop(1, '#6366F1');
+    bgGrad.addColorStop(0, '#2563EB');
+    bgGrad.addColorStop(0.5, '#7C3AED');
+    bgGrad.addColorStop(1, '#4F46E5');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    // 컨페티 장식
-    drawConfetti(ctx);
+    drawHeader(ctx, slide.slideNumber, 3, true);
 
-    // 큰 반투명 원 배경 장식들
-    ctx.fillStyle = 'rgba(255,255,255,0.07)';
-    ctx.beginPath(); ctx.arc(120, 120, 180, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    ctx.beginPath(); ctx.arc(CANVAS_SIZE - 100, CANVAS_SIZE - 120, 220, 0, Math.PI * 2); ctx.fill();
+    // 중앙 프리미엄 화이트 포커스 카드
+    const cardX = 60, cardY = 120, cardW = CANVAS_SIZE - 120, cardH = 830;
+    roundRect(ctx, cardX, cardY, cardW, cardH, 36);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+    ctx.fill(); ctx.shadowBlur = 0;
 
-    // 중앙 흰 카드
-    ctx.shadowColor = 'rgba(0,0,0,0.20)';
-    ctx.shadowBlur = 50;
-    ctx.shadowOffsetY = 12;
-    roundRect(ctx, 70, 120, CANVAS_SIZE - 140, 720, 36);
-    ctx.fillStyle = COLORS.cardBg;
-    ctx.fill();
-    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    // 상단 뱃지
+    roundRect(ctx, CANVAS_SIZE / 2 - 120, cardY + 40, 240, 44, 22);
+    ctx.fillStyle = '#EFF6FF'; ctx.fill();
+    ctx.font = `bold 20px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#2563EB';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎁 FREE TRIAL', CANVAS_SIZE / 2, cardY + 69);
 
-    // 카드 상단 포인트 바
-    ctx.beginPath();
-    ctx.moveTo(70 + 6, 120);
-    ctx.lineTo(70 + CANVAS_SIZE - 140 - 6, 120);
-    ctx.arcTo(70 + CANVAS_SIZE - 140, 120, 70 + CANVAS_SIZE - 140, 120 + 14, 6);
-    ctx.lineTo(70 + CANVAS_SIZE - 140, 120 + 14);
-    ctx.lineTo(70, 120 + 14);
-    ctx.arcTo(70, 120, 70 + 6, 120, 6);
-    ctx.closePath();
-    ctx.fillStyle = bgGrad;
-    ctx.fill();
-
-    // 카드 상단 별 장식
-    const starX = CANVAS_SIZE / 2, starY = 225;
-    for (let i = 0; i < 3; i++) {
-        const sx = starX - 40 + i * 40;
-        ctx.fillStyle = ITEM_COLORS[i].badge + 'cc';
-        ctx.beginPath();
-        ctx.arc(sx, starY, 10, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // 타이틀
-    ctx.font = `bold 56px ${FONT_FAMILY}`;
+    // 메인 헤드라인 타이틀
+    ctx.font = `bold 54px ${FONT_FAMILY}`;
     ctx.fillStyle = COLORS.textDark;
     ctx.textAlign = 'center';
-    const titleLines = wrapText(ctx, stripEmojis(slide.title), CANVAS_SIZE - 220);
-    let titleY = 310;
-    for (const line of titleLines) {
-        ctx.fillText(line, CANVAS_SIZE / 2, titleY);
-        titleY += 72;
+    const tLines = wrapText(ctx, stripEmojis(slide.title), cardW - 80);
+    let tY = cardY + 150;
+    for (const tl of tLines) {
+        ctx.fillText(tl, CANVAS_SIZE / 2, tY);
+        tY += 68;
     }
 
-    // 구분선
-    const divGrad = ctx.createLinearGradient(250, 0, CANVAS_SIZE - 250, 0);
-    divGrad.addColorStop(0, 'rgba(255,107,107,0)');
-    divGrad.addColorStop(0.3, COLORS.coral);
-    divGrad.addColorStop(0.7, COLORS.violet);
-    divGrad.addColorStop(1, 'rgba(99,102,241,0)');
-    ctx.fillStyle = divGrad;
-    ctx.fillRect(250, titleY - 10, CANVAS_SIZE - 500, 4);
+    ctx.font = `26px ${FONT_FAMILY}`;
+    ctx.fillStyle = COLORS.textMuted;
+    ctx.fillText(stripEmojis(slide.subtitle || '지금 프로필 링크에서 바로 확인해보세요!'), CANVAS_SIZE / 2, tY + 10);
 
-    // 리스트 아이템
-    let listY = titleY + 28;
-    slide.contentLines.forEach((item, idx) => {
-        const p = ITEM_COLORS[idx % ITEM_COLORS.length];
-        // 컬러 도트
-        ctx.fillStyle = p.badge;
-        ctx.beginPath();
-        ctx.arc(CANVAS_SIZE / 2 - 195, listY - 9, 9, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = `28px ${FONT_FAMILY}`;
-        ctx.fillStyle = COLORS.textBody;
+    // 구분선
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillRect(150, tY + 40, CANVAS_SIZE - 300, 3);
+
+    // 핵심 혜택 리스트 (USP)
+    let featureY = tY + 80;
+    const defaultFeatures = [
+        '⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정',
+        '📊 4대 역량 스코어링 (직무적합/가독성/논리성/구체성)',
+        '🎁 비용 부담 Zero! 프로필 링크에서 무료 시작'
+    ];
+    const features = slide.contentLines.length >= 3 ? slide.contentLines : defaultFeatures;
+
+    features.forEach((feat, idx) => {
+        roundRect(ctx, cardX + 40, featureY, cardW - 80, 80, 20);
+        ctx.fillStyle = idx === 0 ? '#EFF6FF' : (idx === 1 ? '#F5F3FF' : '#ECFDF5');
+        ctx.strokeStyle = idx === 0 ? '#93C5FD' : (idx === 1 ? '#C4B5FD' : '#6EE7B7');
+        ctx.lineWidth = 1.5;
+        ctx.fill(); ctx.stroke();
+
+        ctx.font = `bold 24px ${FONT_FAMILY}`;
+        ctx.fillStyle = idx === 0 ? '#1E40AF' : (idx === 1 ? '#5B21B6' : '#065F46');
         ctx.textAlign = 'left';
-        ctx.fillText(stripEmojis(item), CANVAS_SIZE / 2 - 175, listY);
-        listY += 52;
+        ctx.fillText(stripEmojis(feat), cardX + 70, featureY + 48);
+
+        featureY += 98;
     });
 
-    // CTA 버튼
-    const btnW = 520, btnH = 80;
-    const btnX = (CANVAS_SIZE - btnW) / 2;
-    const btnY = listY + 30;
-    roundRect(ctx, btnX, btnY, btnW, btnH, 40);
-    ctx.shadowColor = 'rgba(255,107,107,0.35)';
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetY = 6;
+    // 메인 CTA 버튼
+    const btnW = cardW - 80, btnH = 88;
+    const btnX = cardX + 40;
+    const btnY = cardY + cardH - 120;
+    roundRect(ctx, btnX, btnY, btnW, btnH, 44);
     const btnGrad = ctx.createLinearGradient(btnX, 0, btnX + btnW, 0);
-    btnGrad.addColorStop(0, COLORS.coral);
-    btnGrad.addColorStop(1, COLORS.violet);
+    btnGrad.addColorStop(0, '#2563EB');
+    btnGrad.addColorStop(1, '#7C3AED');
     ctx.fillStyle = btnGrad;
-    ctx.fill();
-    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.shadowColor = 'rgba(37,99,235,0.4)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+    ctx.fill(); ctx.shadowBlur = 0;
 
-    ctx.font = `bold 28px ${FONT_FAMILY}`;
-    ctx.fillStyle = COLORS.textWhite;
+    ctx.font = `bold 30px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('지금 무료로 자소서 교정 받기', CANVAS_SIZE / 2, btnY + 52);
+    ctx.fillText('지금 프로필 링크에서 무료 교정 받기 ➔', CANVAS_SIZE / 2, btnY + 55);
 
-    // URL
-    ctx.font = `20px ${FONT_FAMILY}`;
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE / 2, CANVAS_SIZE - 50);
+    // 하단 URL
+    ctx.font = `bold 20px ${FONT_FAMILY}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE / 2, CANVAS_SIZE - 40);
 }
 
 // ─── 공개 API ────────────────────────────────────────────────────────────────────
 
-export async function renderSlideImage(slide: CardNewsSlide, totalSlides: number = 5): Promise<Buffer> {
+export async function renderSlideImage(slide: CardNewsSlide, totalSlides: number = 3): Promise<Buffer> {
     const canvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
     const ctx = canvas.getContext('2d');
 
     if (slide.type === 'COVER') {
         drawCoverSlide(ctx, slide);
-        drawHeader(ctx, slide.slideNumber, totalSlides);
-        drawFooter(ctx, slide.slideNumber, totalSlides);
     } else if (slide.type === 'BODY') {
         drawBodySlide(ctx, slide);
-        drawHeader(ctx, slide.slideNumber, totalSlides);
-        drawFooter(ctx, slide.slideNumber, totalSlides);
     } else if (slide.type === 'CTA') {
         drawCtaSlide(ctx, slide);
-        ctx.font = `bold 20px ${FONT_FAMILY}`;
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${slide.slideNumber} / ${totalSlides}`, CANVAS_SIZE - 60, 60);
     } else {
         drawBodySlide(ctx, slide);
-        drawHeader(ctx, slide.slideNumber, totalSlides);
-        drawFooter(ctx, slide.slideNumber, totalSlides);
     }
 
-    return canvas.toBuffer('image/jpeg', 92);
+    return canvas.toBuffer('image/jpeg', 95);
 }
 
 export async function renderAllCardNewsSlides(
