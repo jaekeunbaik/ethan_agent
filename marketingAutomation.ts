@@ -106,14 +106,14 @@ export async function runMarketingPipeline(): Promise<void> {
 }
 
 /**
- * node-cron 스케줄러 등록 (매일 오전 11:00, 오후 18:00 실행)
+ * node-cron 스케줄러 등록 (매일 오전 11:15, 오후 18:15 실행)
  */
 function startCronScheduler(): void {
     console.log('⏰ Draft Ethan SNS 마케팅 크론 스케줄러가 활성화되었습니다.');
-    console.log('- 실행 시간: 매일 오전 11:00, 오후 18:00 (Cron: 0 11,18 * * *)');
+    console.log('- 실행 시간: 매일 오전 11:15, 오후 18:15 (Cron: 15 11,18 * * *)');
 
-    // 매일 오전 11시, 오후 6시 스케줄링
-    cron.schedule('0 11,18 * * *', async () => {
+    // 매일 오전 11시 15분, 오후 6시 15분 스케줄링
+    cron.schedule('15 11,18 * * *', async () => {
         console.log('[Cron Job] 지정된 스케줄 시각 도달! 파이프라인 트리거 중...');
         await runMarketingPipeline();
     });

@@ -5,60 +5,39 @@ const testSlides: CardNewsSlide[] = [
     {
         slideNumber: 1,
         type: 'COVER',
-        title: '대기업 합격자소서의 비밀',
-        subtitle: 'Draft Ethan AI 교정 리포트',
+        title: '"어릴 적부터 진취적이었던 저는..." (X)',
+        subtitle: '서류 탈락하는 자소서 비포 & 애프터 1:1 심폐소생',
         contentLines: []
     },
     {
         slideNumber: 2,
         type: 'BODY',
-        title: 'Before & After 교정 예시',
-        subtitle: '추상적인 표현을 성과 중심 비즈니스 용어로!',
+        title: '3초 만에 끝나는 문장 교정 (Diff)',
+        subtitle: '추상적인 표현을 직무 수치와 성과로 즉시 교정!',
         contentLines: [
-            'Before: 마케팅 업무를 열심히 수행했습니다.',
-            'After: ROAS 320% 달성 및 신규 유저 1.2만 명 유치'
+            'Before: 어릴 적부터 진취적이고 적극적인 자세로 일을 수행했습니다.',
+            'After: ROAS 320% 달성 과정에서 유저 데이터 기반 개편을 주도했습니다.',
+            '📈 직무 적합성 +35pt | 논리성 +40pt 상승!'
         ],
-        highlightText: '수치와 직무 성과를 명시하세요!'
+        highlightText: '추상적인 미사여구 대신 직무 수치와 성과를 명시하세요!'
     },
     {
         slideNumber: 3,
-        type: 'BODY',
-        title: '직무별 핵심 역량 키워드',
-        subtitle: '채용담당자의 시선을 사로잡는 단어',
-        contentLines: [
-            '개발: 리팩토링, CI/CD 구축, 성능 40% 개선',
-            '마케팅: 타겟  сег먼테이션, A/B 테스트 최적화'
-        ],
-        highlightText: '직무 전문 어휘로 역량을 증명하세요.'
-    },
-    {
-        slideNumber: 4,
-        type: 'BODY',
-        title: '두괄식 서두 작성 공식',
-        subtitle: '서두 10초 만에 합불이 갈리는 이유',
-        contentLines: [
-            '핵심 성과와 기여점을 첫 문장에 배치',
-            '질문 핵심 의도에 100% 직진하는 답변 구조'
-        ],
-        highlightText: '결론부터 명확히 제시하세요.'
-    },
-    {
-        slideNumber: 5,
         type: 'CTA',
-        title: '내 자소서도 3분 만에 교정받기',
-        subtitle: 'Draft Ethan AI 자소서 연구소',
+        title: '내 자소서는 몇 점일까?',
+        subtitle: '지금 프로필 링크에서 무료로 확인해 보세요!',
         contentLines: [
-            '무제한 AI 자소서 교정 및 맞춤법 검수',
-            '직무 맞춤 키워드 및 대기업 관점 평가',
-            '실시간 라인 바이 라인 비포&애프터 제시'
+            '⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정',
+            '📊 4대 역량 스코어링 (직무 적합성/가독성/논리성/구체성)',
+            '🎁 비용 부담 Zero! 프로필 링크에서 바로 무료 체험'
         ]
     }
 ];
 
 async function run() {
-    console.log('Rendering 5 card news slides...');
+    console.log('Rendering 3 card news slides (Concept A Strategy)...');
     const paths = await renderAllCardNewsSlides(testSlides);
-    console.log('Successfully generated card news slides:');
+    console.log('Successfully generated 3 card news slides:');
     paths.forEach(p => console.log(' -', p));
 }
 

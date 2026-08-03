@@ -583,15 +583,32 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     let cardY = 248;
 
     slide.contentLines.forEach((lineText, index) => {
-        const palette = ITEM_COLORS[index % ITEM_COLORS.length];
+        let palette = ITEM_COLORS[index % ITEM_COLORS.length];
+        let cardBgColor = COLORS.cardBg;
+        let badgeLabel = `${index + 1}`;
         const cleanText = stripEmojis(lineText);
+
+        // Before / After / Score 라인 특수 커스텀 스타일
+        if (/before/i.test(cleanText)) {
+            palette = { bg: '#FEE2E2', border: '#EF4444', badge: '#EF4444', text: '#DC2626' };
+            cardBgColor = '#FFF5F5';
+            badgeLabel = 'X';
+        } else if (/after/i.test(cleanText)) {
+            palette = { bg: '#F5F3FF', border: '#7C3AED', badge: '#7C3AED', text: '#6D28D9' };
+            cardBgColor = '#FAF5FF';
+            badgeLabel = 'AI';
+        } else if (/점수|\+|📈|적합성|논리성/i.test(cleanText)) {
+            palette = { bg: '#DBEAFE', border: '#2563EB', badge: '#2563EB', text: '#1E40AF' };
+            cardBgColor = '#F0F9FF';
+            badgeLabel = '📊';
+        }
 
         // 카드 배경
         ctx.shadowColor = 'rgba(0,0,0,0.06)';
         ctx.shadowBlur = 14;
         ctx.shadowOffsetY = 4;
         roundRect(ctx, cardPadX, cardY, cardWidth, cardH, 20);
-        ctx.fillStyle = COLORS.cardBg;
+        ctx.fillStyle = cardBgColor;
         ctx.fill();
         ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
@@ -600,7 +617,7 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
         ctx.fillStyle = palette.border;
         ctx.fill();
 
-        // 번호 뱃지 (링 + 숫자)
+        // 번호 / 심볼 뱃지 (링 + 텍스트)
         const badgeCX = cardPadX + 58;
         const badgeCY = cardY + cardH / 2;
         ctx.fillStyle = palette.bg;
@@ -612,10 +629,10 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
         ctx.beginPath();
         ctx.arc(badgeCX, badgeCY, 28, -Math.PI / 2, Math.PI);
         ctx.stroke();
-        ctx.font = `bold 24px ${FONT_FAMILY}`;
+        ctx.font = `bold ${badgeLabel.length > 2 ? 18 : 22}px ${FONT_FAMILY}`;
         ctx.fillStyle = palette.text;
         ctx.textAlign = 'center';
-        ctx.fillText(`${index + 1}`, badgeCX, badgeCY + 9);
+        ctx.fillText(badgeLabel, badgeCX, badgeCY + 7);
 
         // 본문 텍스트
         ctx.font = `28px ${FONT_FAMILY}`;
