@@ -19,6 +19,7 @@ export async function runMarketingPipeline(): Promise<void> {
     let contentData: MarketingContentResponse | null = null;
     let publicUrls: string[] = [];
     let threadsPostId: string | null = null;
+    let mytiThreadsPostId: string | null = null;
     let instagramPostId: string | null = null;
 
     try {
@@ -26,10 +27,11 @@ export async function runMarketingPipeline(): Promise<void> {
         console.log('🚀 [1/5] Gemini 2.5 API로 오늘의 홍보 콘텐츠 생성 중...');
         contentData = await generateMarketingContent();
         console.log(`✅ 콘텐츠 생성 완료! (주제: "${contentData.topic}")`);
-        console.log(`- 스레드 문구: ${contentData.thread_text.substring(0, 50)}...`);
+        console.log(`- Draft Ethan 스레드 문구: ${contentData.thread_text.substring(0, 40)}...`);
+        console.log(`- MYTI 스레드 문구: ${contentData.myti_thread_text.substring(0, 40)}...`);
 
-        // 2단계: 카드뉴스 슬라이드 5장 이미지 렌더링
-        console.log('\n🎨 [2/5] 카드뉴스 5장 슬라이드 이미지 렌더링 중...');
+        // 2단계: 카드뉴스 슬라이드 3장 이미지 렌더링 (Draft Ethan용)
+        console.log('\n🎨 [2/5] Draft Ethan 카드뉴스 이미지 렌더링 중...');
         const outputDir = path.join(process.cwd(), 'output_cardnews');
         const localImagePaths = await renderAllCardNewsSlides(contentData.card_news_slides, outputDir);
         console.log(`✅ 이미지 렌더링 완료! (저장 위치: ${outputDir})`);
@@ -42,18 +44,29 @@ export async function runMarketingPipeline(): Promise<void> {
             console.warn('⚠️ 임시 이미지 업로더 전송 실패:', uploadError.message);
         }
 
-        // 4단계: Threads 자동 업로드
-        console.log('\n💬 [4/5] Threads API로 포스팅 업로드 중...');
+        // 4단계: Threads 자동 업로드 (2개 사이드 프로젝트 포스팅)
+        console.log('\n💬 [4/5] Threads API로 스레드 포스팅 업로드 중 (Draft Ethan + MYTI)...');
+        
+        // 4-1. Draft Ethan 스레드 게시
         try {
+            console.log('  📌 [Threads 1/2] Draft Ethan 스레드 업로드 중...');
             threadsPostId = await postToThreads(contentData.thread_text);
         } catch (threadsErr: any) {
-            console.error('❌ Threads 업로드 실패:', threadsErr.message || threadsErr);
-            if (threadsErr.response?.data) {
-                console.error('   상세 에러:', JSON.stringify(threadsErr.response.data, null, 2));
-            }
+            console.error('❌ Draft Ethan Threads 업로드 실패:', threadsErr.message || threadsErr);
         }
 
-        // 5단계: Instagram Graph API Carousel 자동 업로드
+        // 스레드 연속 게시 간 5초 딜레이
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        // 4-2. MYTI 페르소나 테스트 스레드 게시 (Threads 전용)
+        try {
+            console.log('  📌 [Threads 2/2] MYTI 페르소나 테스트 스레드 업로드 중...');
+            mytiThreadsPostId = await postToThreads(contentData.myti_thread_text);
+        } catch (mytiErr: any) {
+            console.error('❌ MYTI Threads 업로드 실패:', mytiErr.message || mytiErr);
+        }
+
+        // 5단계: Instagram Graph API Carousel 자동 업로드 (Draft Ethan)
         console.log('\n📸 [5/5] Instagram Graph API로 카드뉴스 캐러셀 포스팅 업로드 중...');
         try {
             if (publicUrls.length > 0) {
@@ -68,17 +81,20 @@ export async function runMarketingPipeline(): Promise<void> {
             }
         }
 
-        // 결과 판정 및 Supabase Database 로깅
-        const isSuccess = Boolean(threadsPostId || instagramPostId);
-        const status = (threadsPostId && instagramPostId) ? 'SUCCESS' : (isSuccess ? 'PARTIAL_SUCCESS' : 'FAILED');
+        // 결과 판정 및 Database/JSON 로깅
+        const isSuccess = Boolean(threadsPostId || mytiThreadsPostId || instagramPostId);
+        const allSuccess = Boolean(threadsPostId && mytiThreadsPostId && instagramPostId);
+        const status = allSuccess ? 'SUCCESS' : (isSuccess ? 'PARTIAL_SUCCESS' : 'FAILED');
 
         await logMarketingResult({
             topic: contentData.topic,
             thread_text: contentData.thread_text,
+            myti_thread_text: contentData.myti_thread_text,
             insta_caption: contentData.insta_caption,
             card_news_slides: contentData.card_news_slides,
             card_news_urls: publicUrls,
             threads_post_id: threadsPostId,
+            myti_threads_post_id: mytiThreadsPostId,
             instagram_post_id: instagramPostId,
             status: status,
             error_message: !isSuccess ? 'Threads 및 Instagram 업로드 모두 실패' : null
@@ -86,7 +102,8 @@ export async function runMarketingPipeline(): Promise<void> {
 
         console.log('\n🎉 파이프라인 실행이 완료되었습니다!');
         console.log(`- 최종 상태: ${status}`);
-        console.log(`- Threads Post ID: ${threadsPostId || 'N/A'}`);
+        console.log(`- Draft Ethan Threads Post ID: ${threadsPostId || 'N/A'}`);
+        console.log(`- MYTI Threads Post ID: ${mytiThreadsPostId || 'N/A'}`);
         console.log(`- Instagram Post ID: ${instagramPostId || 'N/A'}`);
 
     } catch (error: any) {
@@ -95,6 +112,7 @@ export async function runMarketingPipeline(): Promise<void> {
             await logMarketingResult({
                 topic: contentData.topic,
                 thread_text: contentData.thread_text,
+                myti_thread_text: contentData.myti_thread_text,
                 insta_caption: contentData.insta_caption,
                 card_news_slides: contentData.card_news_slides,
                 card_news_urls: publicUrls,

@@ -15,6 +15,7 @@ export interface CardNewsSlide {
 export interface MarketingContentResponse {
     topic: string;
     thread_text: string;
+    myti_thread_text: string;
     insta_caption: string;
     card_news_slides: CardNewsSlide[];
 }
@@ -55,36 +56,32 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     // 랜덤 주제 선택
     const selectedTopic = MARKETING_TOPICS[Math.floor(Math.random() * MARKETING_TOPICS.length)];
     const draftEthanUrl = process.env.DRAFT_ETHAN_URL || 'https://draft-ethan.com';
+    const mytiUrl = process.env.MYTI_URL || 'https://myti-five.vercel.app/';
 
     const systemInstruction = `
-    당신은 Draft Ethan(AI 자소서 교정 및 평가 서비스)의 10년 차 수석 마케터이자 "취업 시장의 뼈 때리는 팩폭 메이트 & AI 취업 코치"입니다.
-    취준생과 이직 준비생의 답답함에 깊이 공감하되, 딱딱하지 않게 바로 해결책을 던져주는 위트 있고 자극적인 톤앤매너로 작성하세요.
+    당신은 2030 취준생 및 이직러의 심리를 정확히 파고드는 B2C SNS 전문 마케터이자 "팩폭 메이트"입니다.
+    당신은 두 가지 사이드 프로젝트를 운영하며 마케팅하고 있습니다:
+    1. Draft Ethan (AI 자소서 교정 및 평가 서비스 - ${draftEthanUrl})
+    2. MYTI (내 안의 취업/이직 페르소나 테스트 - ${mytiUrl})
 
     [Draft Ethan 핵심 가치 (USP)]
     - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시
     - 📊 4대 역량 스코어링 (직무 적합성 / 가독성 / 논리성 / 구체성)
-    - 💡 기업/직무 맞춤 톤앤매너(논리적, 전문적 등) & 합격 소제목 자동 추천
-    - 🎁 무료 체험 제공 (비용 부담 Zero, 10만 원 컨설팅 대비 시간/비용 90% 절감)
-    - 📌 프로필 검색 최적화(SEO): AI 자소서 첨삭·평가 | draft_ethan
+    - 💡 기업/직무 맞춤 톤앤매너 & 합격 소제목 추천
+    - 🎁 무료 체험 제공
+
+    [MYTI 핵심 가치 (USP)]
+    - 🎯 내 안의 취업/이직 페르소나 테스트 (${mytiUrl})
+    - ⚡ 100% 무료, 회원가입/로그인 0초 컷, 12문항 1분 30초 완성
+    - 🤖 16가지 직무 행동 패턴 기반의 면접장 팩폭 페르소나 도출 (예: 벼락치기의 연금술사, 면접장의 감성 로봇, AI급 데이터 수집가, 멘탈 연금술사 등)
+    - 💥 팩폭 특징 3가지 & 환상의/환장의 짝꿍 케미 분석
+    - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
 
     [출력 요구사항]
-    1. thread_text: 스레드용 숏폼 텍스트 (위트 있고 가독성 좋은 300자 내외, 공감대 형성 + 팩폭 메시지, 자연스러운 Draft Ethan URL 링크 포함: ${draftEthanUrl})
-    2. insta_caption: 인스타그램 본문 캡션 (자극적인 첫 줄 헤드라인 + 본문 팩폭/팁 + 서비스 셀링 포인트 + CTA: "프로필 링크에서 무료로 확인하세요!" + 필수 해시태그 포함 (#자소서첨삭 #자기소개서 #취준생 #서류합격 #취업준비 #이력서컨설팅 #자소서예시 #AI자소서 #이직준비 #취업인스타그램))
-    3. card_news_slides: 정확히 3장의 카드뉴스 슬라이드 텍스트 배열
-       - 1장 (COVER): 자극적 공감 유도 / 호기심 클릭 타이틀 (예: "어릴 적부터 진취적이었던 저는..." (X), "서류 탈락하는 자소서의 흔한 착각")
-       - 2장 (BODY): Before vs After 문장 교정 시연 및 4대 역량 스코어 점수 상승 표기.
-         * contentLines: [
-             "Before: 어릴 적부터 진취적이고 적극적인 자세로 일을 처리했습니다.",
-             "After: ROAS 280% 달성 과정에서 데이터 기반 개편을 주도했습니다.",
-             "📈 직무 적합성 +35pt | 논리성 +40pt 상승!"
-           ]
-         * highlightText: 교정 핵심 이유 (예: "추상적인 미사여구 대신 직무 수치와 성과를 명시하세요.")
-       - 3장 (CTA): "내 자소서는 몇 점일까? 지금 프로필 링크에서 무료로 확인해 보세요!" 
-         * contentLines: [
-             "⚡ 3초 만에 문장 단위 (Diff) 1:1 맞춤 교정",
-             "📊 4대 역량 스코어링 (직무적합/가독성/논리성/구체성)",
-             "🎁 비용 부담 Zero! 프로필 링크에서 바로 시작"
-           ]
+    1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, Draft Ethan URL: ${draftEthanUrl} 포함)
+    2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, MYTI URL: ${mytiUrl} 포함, 댓글/저장/공유 유도)
+    3. insta_caption: Draft Ethan 카드뉴스용 인스타그램 캡션 (자극적 헤드라인 + 팩폭/팁 + CTA + 해시태그)
+    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스 슬라이드 텍스트 배열
   `;
 
     const responseSchema: Schema = {
@@ -92,6 +89,7 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
         properties: {
             topic: { type: Type.STRING },
             thread_text: { type: Type.STRING },
+            myti_thread_text: { type: Type.STRING },
             insta_caption: { type: Type.STRING },
             card_news_slides: {
                 type: Type.ARRAY,
@@ -112,7 +110,7 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
                 }
             }
         },
-        required: ['topic', 'thread_text', 'insta_caption', 'card_news_slides']
+        required: ['topic', 'thread_text', 'myti_thread_text', 'insta_caption', 'card_news_slides']
     };
 
     try {
@@ -121,7 +119,7 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
             contents: [
                 {
                     role: 'user',
-                    parts: [{ text: `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 3슬라이드 인스타그램 카드뉴스, 인스타 캡션, 스레드 포스팅 콘텐츠를 생성해 줘.` }]
+                    parts: [{ text: `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 Draft Ethan용 (인스타 캡션, 인스타 3슬라이드 카드뉴스, 스레드 문구) 및 MYTI 전용 스레드 포스팅 문구를 생성해 줘.` }]
                 }
             ],
             config: {

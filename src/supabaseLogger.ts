@@ -9,10 +9,12 @@ dotenv.config();
 export interface MarketingLogPayload {
     topic: string;
     thread_text: string;
+    myti_thread_text?: string;
     insta_caption: string;
     card_news_slides: any[];
     card_news_urls?: string[];
     threads_post_id?: string | null;
+    myti_threads_post_id?: string | null;
     instagram_post_id?: string | null;
     status: 'SUCCESS' | 'FAILED' | 'PARTIAL_SUCCESS';
     error_message?: string | null;
@@ -138,10 +140,12 @@ export async function logMarketingResult(payload: MarketingLogPayload): Promise<
         logs.push({
             topic: payload.topic,
             thread_text: payload.thread_text,
+            myti_thread_text: payload.myti_thread_text || null,
             insta_caption: payload.insta_caption,
             card_news_slides: payload.card_news_slides,
             card_news_urls: payload.card_news_urls || [],
             threads_post_id: payload.threads_post_id || null,
+            myti_threads_post_id: payload.myti_threads_post_id || null,
             instagram_post_id: payload.instagram_post_id || null,
             status: payload.status,
             error_message: payload.error_message || null,
