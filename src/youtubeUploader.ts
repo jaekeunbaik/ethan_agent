@@ -86,6 +86,27 @@ export async function uploadToYouTubeShorts(params: YouTubeUploadParams): Promis
         const videoUrl = `https://youtube.com/shorts/${videoId}`;
         console.log(`[YouTubeUploader] ✅ 유튜브 쇼츠 업로드 성공! URL: ${videoUrl}`);
 
+        // 📌 댓글 자동 작성 (랜딩페이지 URL https://draft-ethan.vercel.app/ 자동 삽입)
+        try {
+            console.log(`[YouTubeUploader] 💬 쇼츠 영상에 랜딩페이지 안내 댓글 자동 작성 중...`);
+            await youtube.commentThreads.insert({
+                part: ['snippet'],
+                requestBody: {
+                    snippet: {
+                        videoId: videoId,
+                        topLevelComment: {
+                            snippet: {
+                                textOriginal: `👉 3초 만에 끝나는 AI 자소서 팩폭 검수 받으러 가기 (100% 무료)\nhttps://draft-ethan.vercel.app/`
+                            }
+                        }
+                    }
+                }
+            });
+            console.log(`[YouTubeUploader] ✅ 랜딩페이지 안내 댓글 작성 완료!`);
+        } catch (commentErr: any) {
+            console.warn(`[YouTubeUploader] ⚠️ 댓글 작성 처리 경고:`, commentErr.message || commentErr);
+        }
+
         return {
             success: true,
             videoId,
