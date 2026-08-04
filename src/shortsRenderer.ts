@@ -57,7 +57,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
     ctx.closePath();
 }
 
-// ─── 트렌디 유튜브 쇼츠 자막 스타일 (상단 헤드라인 + 중앙 비주얼 + 하단 강조 자막) ───
+// ─── 공통 헤드라인 & 형광 자막 배너 ──────────────────────────────────────────
 
 function drawTopHeader(ctx: CanvasRenderingContext2D, titleText: string) {
     ctx.font = `bold 52px ${FONT_FAMILY}`;
@@ -91,17 +91,14 @@ function drawBottomSubtitle(ctx: CanvasRenderingContext2D, subtitleText: string)
     ctx.fillText(cleanStr.substring(0, 30), WIDTH / 2, boxY + 60);
 }
 
-// ─── 1. 커버 슬라이드 (Cover Slide - 깔끔한 화이트/블루 트렌드) ───────────────
+// ─── 1. 커버 슬라이드 (Cover Slide) ──────────────────────────────────────────
 
 function renderShortsCover(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
-    // 배경 (화사한 크림 화이트)
     ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // 상단 헤드라인
     drawTopHeader(ctx, '⚡ 3초 만에 바뀌는 합격 자소서..!');
 
-    // 중앙 메인 포커스 카드
     const cardY = 280, cardH = 1100;
     roundRect(ctx, 60, cardY, WIDTH - 120, cardH, 40);
     ctx.fillStyle = '#FFFFFF';
@@ -109,7 +106,6 @@ function renderShortsCover(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) 
     ctx.lineWidth = 3;
     ctx.fill(); ctx.stroke();
 
-    // 상단 그래디언트 뱃지
     roundRect(ctx, WIDTH / 2 - 200, cardY + 60, 400, 70, 35);
     const badgeGrad = ctx.createLinearGradient(WIDTH / 2 - 200, 0, WIDTH / 2 + 200, 0);
     badgeGrad.addColorStop(0, '#2563EB');
@@ -121,7 +117,6 @@ function renderShortsCover(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) 
     ctx.textAlign = 'center';
     ctx.fillText('🔥 오늘의 AI 팩폭 레포트', WIDTH / 2, cardY + 107);
 
-    // 타이틀
     ctx.font = `bold 72px ${FONT_FAMILY}`;
     ctx.fillStyle = '#0F172A';
     const lines = wrapText(ctx, stripEmojis(slide.title), WIDTH - 200);
@@ -131,7 +126,6 @@ function renderShortsCover(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) 
         curY += 100;
     }
 
-    // 서브타이틀
     if (slide.subtitle) {
         const boxY = curY + 40;
         roundRect(ctx, 110, boxY, WIDTH - 220, 200, 24);
@@ -150,7 +144,6 @@ function renderShortsCover(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) 
         }
     }
 
-    // 하단 자막
     drawBottomSubtitle(ctx, slide.subtitle || slide.title);
 }
 
@@ -170,7 +163,6 @@ function renderShortsBody(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     });
 
     if (beforeText && afterText) {
-        // Before (Red Card)
         const bY = 260, bH = 430;
         roundRect(ctx, 60, bY, WIDTH - 120, bH, 32);
         ctx.fillStyle = '#FEF2F2';
@@ -192,13 +184,11 @@ function renderShortsBody(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
         let by = bY + 145;
         for (const l of bls) { ctx.fillText(l, 100, by); by += 54; }
 
-        // Arrow
         ctx.font = `bold 48px ${FONT_FAMILY}`;
         ctx.fillStyle = '#7C3AED';
         ctx.textAlign = 'center';
         ctx.fillText('⬇️ Draft Ethan AI 1:1 맞춤 교정 ⬇️', WIDTH / 2, bY + bH + 75);
 
-        // After (Purple Card)
         const aY = bY + bH + 130, aH = 450;
         roundRect(ctx, 60, aY, WIDTH - 120, aH, 32);
         ctx.fillStyle = '#F5F3FF';
@@ -293,7 +283,7 @@ export async function generateShortsSlideImages(
     return imagePaths;
 }
 
-// ─── TTS 음성 다운로드 (긴 문장 조각별 자동 분할 지원) ──────────────────────
+// ─── TTS 음성 다운로드 ───────────────────────────────────────────────────────
 
 async function generateTTSAudioForText(text: string, outputPath: string): Promise<string> {
     try {
@@ -306,7 +296,7 @@ async function generateTTSAudioForText(text: string, outputPath: string): Promis
             if (remaining.length <= 180) {
                 chunks.push(remaining);
                 break;
-            } {
+            } else {
                 let cutIndex = remaining.lastIndexOf('.', 180);
                 if (cutIndex === -1) cutIndex = remaining.lastIndexOf(' ', 180);
                 if (cutIndex === -1) cutIndex = 180;
@@ -340,32 +330,31 @@ async function generateTTSAudioForText(text: string, outputPath: string): Promis
 function getAudioDuration(audioPath: string): Promise<number> {
     return new Promise((resolve) => {
         if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size === 0) {
-            return resolve(5.0);
+            return resolve(4.0);
         }
-        ffmpeg.ffprobe(audioPath, (err, metadata) => {
+        ffmpeg.ffprobe(audioPath, (err: any, metadata: any) => {
             if (err || !metadata || !metadata.format || !metadata.format.duration) {
-                return resolve(5.0);
+                return resolve(4.0);
             }
             resolve(metadata.format.duration);
         });
     });
 }
 
-// ─── FFmpeg 9:16 쇼츠 동영상 (.mp4) 합성 ─────────────────────────────────────
+// ─── FFmpeg 9:16 쇼츠 동영상 (.mp4) 합성 (슬라이드별 1:1 오디오 싱크 연동) ──
 
 export async function createShortsVideo(
     slides: CardNewsSlide[],
     outputDir: string = path.join(process.cwd(), 'output_shorts')
 ): Promise<string> {
-    console.log('[ShortsRenderer] 🎬 9:16 세로 쇼츠 영상 렌더링 시작...');
+    console.log('[ShortsRenderer] 🎬 9:16 세로 쇼츠 영상 렌더링 시작 (슬라이드별 1:1 음성 싱크 적용)...');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
     // 1. 9:16 슬라이드 이미지 3장 생성
     const framePaths = await generateShortsSlideImages(slides, outputDir);
 
-    // 2. 슬라이드별 개별 TTS 및 전체 TTS 생성
-    const audioPaths: string[] = [];
-    const audioDurations: number[] = [];
+    // 2. 슬라이드별 개별 TTS 생성 및 해당 슬라이드 비디오 세그먼트 직접 합성
+    const segmentPaths: string[] = [];
 
     for (let i = 0; i < slides.length; i++) {
         const s = slides[i];
@@ -374,32 +363,44 @@ export async function createShortsVideo(
 
         const aPath = path.join(outputDir, `tts_slide_${i + 1}.mp3`);
         await generateTTSAudioForText(text, aPath);
-        const duration = await getAudioDuration(aPath);
+        const rawDur = await getAudioDuration(aPath);
 
-        audioPaths.push(aPath);
-        // 마지막 슬라이드는 말끝 잘림 방지를 위해 +2.5초 추가, 그 외 슬라이드는 +1.2초 여유 추가
-        const padding = (i === slides.length - 1) ? 2.5 : 1.2;
-        audioDurations.push(Math.max(4.0, duration + padding));
-        console.log(`[ShortsRenderer] 🎤 슬라이드 ${i + 1} 음성 길이: ${duration.toFixed(1)}초 -> 비디오 재생시간: ${audioDurations[i].toFixed(1)}초`);
-    }
+        // 슬라이드 1, 2는 음성 끝난 후 0.5초 여백, 마지막 CTA 슬라이드는 2.5초 여백 보장!
+        const padding = (i === slides.length - 1) ? 2.5 : 0.6;
+        const segDuration = Math.max(3.5, rawDur + padding);
+        console.log(`[ShortsRenderer] 🎙️ 슬라이드 ${i + 1} TTS 음성: ${rawDur.toFixed(1)}초 -> 슬라이드 유지: ${segDuration.toFixed(1)}초`);
 
-    // 3. 개별 슬라이드 비디오 세그먼트 생성
-    const segmentPaths: string[] = [];
-    for (let i = 0; i < framePaths.length; i++) {
         const segPath = path.join(outputDir, `segment_${i + 1}.mp4`);
-        const duration = audioDurations[i];
+        const hasAudio = fs.existsSync(aPath) && fs.statSync(aPath).size > 0;
 
         await new Promise((resolve, reject) => {
-            ffmpeg(framePaths[i])
-                .loop(duration)
-                .outputOptions([
+            const cmd = ffmpeg(framePaths[i])
+                .loop(segDuration);
+
+            if (hasAudio) {
+                cmd.input(aPath);
+                cmd.outputOptions([
+                    '-c:v libx264',
+                    '-pix_fmt yuv420p',
+                    '-preset ultrafast',
+                    '-c:a aac',
+                    '-af', `apad=pad_dur=${padding}`, // 말 끝난 후 여유 여백 추가
+                    '-map 0:v:0',
+                    '-map 1:a:0',
+                    '-r 30',
+                    `-t ${segDuration}`
+                ]);
+            } else {
+                cmd.outputOptions([
                     '-c:v libx264',
                     '-pix_fmt yuv420p',
                     '-preset ultrafast',
                     '-r 30',
-                    `-t ${duration}`
-                ])
-                .output(segPath)
+                    `-t ${segDuration}`
+                ]);
+            }
+
+            cmd.output(segPath)
                 .on('end', resolve)
                 .on('error', reject)
                 .run();
@@ -408,60 +409,25 @@ export async function createShortsVideo(
         segmentPaths.push(segPath);
     }
 
-    // 4. 비디오 세그먼트 Concat
+    // 3. 1:1 오디오가 매핑된 3개 슬라이드 동영상을 부드럽게 하나로 병합 (Concat)
     const concatListPath = path.join(outputDir, 'concat_list.txt');
     const concatContent = segmentPaths.map(p => `file '${p.replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(concatListPath, concatContent);
 
-    const mergedVideoPath = path.join(outputDir, 'video_merged.mp4');
-    await new Promise((resolve, reject) => {
+    const finalShortsVideo = path.join(outputDir, 'youtube_shorts.mp4');
+
+    return new Promise((resolve, reject) => {
         ffmpeg()
             .input(concatListPath)
             .inputOptions(['-f concat', '-safe 0'])
             .outputOptions(['-c copy'])
-            .output(mergedVideoPath)
-            .on('end', resolve)
-            .on('error', reject)
-            .run();
-    });
-
-    // 5. 전체 통합 음성 스크립트 생성 및 최종 합성 (apad=pad_dur=3으로 말끝 완벽 2.5초 보장)
-    let fullScript = '';
-    slides.forEach(s => {
-        fullScript += `${s.title}. ${s.subtitle || ''}. `;
-        s.contentLines.forEach(l => fullScript += `${l}. `);
-    });
-
-    const fullAudioPath = path.join(outputDir, 'tts_voice_full.mp3');
-    await generateTTSAudioForText(fullScript, fullAudioPath);
-
-    const finalShortsVideo = path.join(outputDir, 'youtube_shorts.mp4');
-    const hasAudio = fs.existsSync(fullAudioPath) && fs.statSync(fullAudioPath).size > 0;
-
-    return new Promise((resolve, reject) => {
-        const cmd = ffmpeg().input(mergedVideoPath);
-
-        if (hasAudio) {
-            cmd.input(fullAudioPath);
-            cmd.outputOptions([
-                '-c:v copy',
-                '-c:a aac',
-                '-af apad=pad_dur=3', // 말 끝난 후 무조건 2.5~3초 여백 보장
-                '-map 0:v:0',
-                '-map 1:a:0',
-                '-shortest'
-            ]);
-        } else {
-            cmd.outputOptions(['-c copy']);
-        }
-
-        cmd.output(finalShortsVideo)
+            .output(finalShortsVideo)
             .on('end', () => {
-                console.log(`[ShortsRenderer] 🎉 자막 완벽 수용 + 말끝 2.5초 여유 쇼츠 비디오 완성!: ${finalShortsVideo}`);
+                console.log(`[ShortsRenderer] 🎉 슬라이드별 1:1 완벽 음성 싱크 쇼츠 동영상 완성!: ${finalShortsVideo}`);
                 resolve(finalShortsVideo);
             })
             .on('error', (err) => {
-                console.error('[ShortsRenderer] ❌ 오디오 합성 실패:', err.message);
+                console.error('[ShortsRenderer] ❌ 세그먼트 병합 실패:', err.message);
                 reject(err);
             })
             .run();
