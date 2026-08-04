@@ -27,19 +27,41 @@ function stripEmojis(text: string): string {
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const words = text.split(' ');
+    const clean = stripEmojis(text);
+    if (!clean) return [];
+
+    const words = clean.split(' ');
     const lines: string[] = [];
-    let currentLine = words[0] || '';
-    for (let i = 1; i < words.length; i++) {
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
         const word = words[i];
-        if (ctx.measureText(currentLine + ' ' + word).width < maxWidth) {
-            currentLine += ' ' + word;
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        if (ctx.measureText(testLine).width <= maxWidth) {
+            currentLine = testLine;
         } else {
-            lines.push(currentLine);
-            currentLine = word;
+            if (currentLine) {
+                lines.push(currentLine);
+                currentLine = '';
+            }
+            // 단어 자체가 maxWidth보다 클 경우 문자 단위로 강제 분할
+            if (ctx.measureText(word).width > maxWidth) {
+                let charLine = '';
+                for (const char of word) {
+                    if (ctx.measureText(charLine + char).width > maxWidth) {
+                        lines.push(charLine);
+                        charLine = char;
+                    } else {
+                        charLine += char;
+                    }
+                }
+                currentLine = charLine;
+            } else {
+                currentLine = word;
+            }
         }
     }
-    lines.push(currentLine);
+    if (currentLine) lines.push(currentLine);
     return lines;
 }
 
@@ -229,16 +251,16 @@ function renderShortsCta(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.lineWidth = 3.5;
     ctx.fill(); ctx.stroke();
 
-    ctx.font = `bold 64px ${FONT_FAMILY}`;
+    ctx.font = `bold 46px ${FONT_FAMILY}`;
     ctx.fillStyle = '#0F172A';
     ctx.textAlign = 'center';
-    const tls = wrapText(ctx, stripEmojis(slide.title), WIDTH - 200);
-    let ty = cardY + 160;
-    for (const tl of tls) { ctx.fillText(tl, WIDTH / 2, ty); ty += 90; }
+    const tls = wrapText(ctx, slide.title, WIDTH - 240);
+    let ty = cardY + 180;
+    for (const tl of tls) { ctx.fillText(tl, WIDTH / 2, ty); ty += 68; }
 
-    ctx.font = `34px ${FONT_FAMILY}`;
+    ctx.font = `32px ${FONT_FAMILY}`;
     ctx.fillStyle = '#475569';
-    ctx.fillText('지금 바로 3초 만에 AI 교정을 받아보세요!', WIDTH / 2, ty + 30);
+    ctx.fillText('지금 바로 3초 만에 AI 교정을 받아보세요!', WIDTH / 2, ty + 40);
 
     const btnY = cardY + cardH - 240;
     roundRect(ctx, 100, btnY, WIDTH - 200, 130, 65);

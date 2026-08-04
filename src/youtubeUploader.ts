@@ -86,23 +86,13 @@ export async function uploadToYouTubeShorts(params: YouTubeUploadParams): Promis
         const videoUrl = `https://youtube.com/shorts/${videoId}`;
         console.log(`[YouTubeUploader] ✅ 유튜브 쇼츠 업로드 성공! URL: ${videoUrl}`);
 
-        // 📌 댓글 자동 작성 (랜딩페이지 URL https://draft-ethan.vercel.app/ 자동 삽입)
+        // 📌 새로 업로드된 비디오 및 이전 최근 비디오들에 랜딩페이지 대표 댓글 자동 달기
         try {
-            console.log(`[YouTubeUploader] 💬 쇼츠 영상에 랜딩페이지 안내 댓글 자동 작성 중...`);
-            await youtube.commentThreads.insert({
-                part: ['snippet'],
-                requestBody: {
-                    snippet: {
-                        videoId: videoId,
-                        topLevelComment: {
-                            snippet: {
-                                textOriginal: `👉 3초 만에 끝나는 AI 자소서 팩폭 검수 받으러 가기 (100% 무료)\nhttps://draft-ethan.vercel.app/`
-                            }
-                        }
-                    }
-                }
-            });
-            console.log(`[YouTubeUploader] ✅ 랜딩페이지 안내 댓글 작성 완료!`);
+            console.log(`[YouTubeUploader] ⏳ 유튜브 인코딩 대기 중 (5초)...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            console.log(`[YouTubeUploader] 💬 최근 영상 및 현재 쇼츠에 랜딩페이지 안내 댓글 자동 작성 중...`);
+            await commentOnRecentVideos(youtube, videoId);
         } catch (commentErr: any) {
             console.warn(`[YouTubeUploader] ⚠️ 댓글 작성 처리 경고:`, commentErr.message || commentErr);
         }
@@ -119,5 +109,53 @@ export async function uploadToYouTubeShorts(params: YouTubeUploadParams): Promis
             success: false,
             error: errorMessage
         };
+    }
+}
+
+async function commentOnRecentVideos(youtube: any, currentVideoId?: string) {
+    const videoIdsToComment: string[] = [];
+    if (currentVideoId) videoIdsToComment.push(currentVideoId);
+
+    try {
+        const searchRes = await youtube.search.list({
+            part: ['snippet'],
+            forMine: true,
+            type: ['video'],
+            maxResults: 5,
+            order: 'date'
+        });
+
+        const items = searchRes.data.items || [];
+        for (const item of items) {
+            const vId = item.id?.videoId;
+            if (vId && !videoIdsToComment.includes(vId)) {
+                videoIdsToComment.push(vId);
+            }
+        }
+    } catch (err: any) {
+        console.warn('[YouTubeUploader] ⚠️ 최근 동영상 목록 가져오기 참고:', err.message);
+    }
+
+    const commentText = `👉 3초 만에 끝나는 AI 자소서 팩폭 검수 받으러 가기 (100% 무료)\nhttps://draft-ethan.vercel.app/`;
+
+    for (const vId of videoIdsToComment) {
+        try {
+            await youtube.commentThreads.insert({
+                part: ['snippet'],
+                requestBody: {
+                    snippet: {
+                        videoId: vId,
+                        topLevelComment: {
+                            snippet: {
+                                textOriginal: commentText
+                            }
+                        }
+                    }
+                }
+            });
+            console.log(`[YouTubeUploader] ✅ 동영상(${vId})에 대표 랜딩페이지 댓글 작성 완료!`);
+        } catch (cErr: any) {
+            // 이미 댓글이 달리거나 중복인 경우 정상 무시
+        }
     }
 }
