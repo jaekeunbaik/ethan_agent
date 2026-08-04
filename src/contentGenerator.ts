@@ -147,7 +147,10 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
             contents: [
                 {
                     role: 'user',
-                    parts: [{ text: `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 Draft Ethan용 (인스타 캡션, 인스타 3슬라이드 카드뉴스, 스레드 문구) 및 MYTI 전용 스레드 포스팅 문구를 생성해 줘.` }]
+                    parts: [{ text: `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 Draft Ethan용 (인스타 캡션, 인스타 3슬라이드 카드뉴스, 스레드 문구) 및 MYTI 전용 스레드 포스팅 문구를 생성해 줘.
+
+🚨 [쇼츠/슬라이드 말투 필수 원칙]
+card_news_slides의 모든 제목, 소제목, 내용 문장은 반드시 친한 친구에게 썰 풀듯 "~했거든?", "~인 거야", "~라고 하더라고", "~해봐!" 어미를 사용하는 100% 썰 스피치 반말 구어체로만 작성해야 해. 절대로 뉴스 기사체나 존댓말(~입니다, ~했습니다)을 쓰면 안 돼!` }]
                 }
             ],
             config: {
