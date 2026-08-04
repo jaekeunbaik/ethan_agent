@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, Schema } from '@google/genai';
 import dotenv from 'dotenv';
+import { fetchLatestCareerTrend, TrendNewsArticle } from './trendFetcher';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ export interface MarketingContentResponse {
     myti_thread_text: string;
     insta_caption: string;
     card_news_slides: CardNewsSlide[];
+    news_source?: string;
 }
 
 const MARKETING_TOPICS = [
@@ -43,7 +45,7 @@ const MARKETING_TOPICS = [
 ];
 
 /**
- * Gemini API를 활용하여 인스타그램/스레드 홍보 콘텐츠 및 3슬라이드 카드뉴스 생성
+ * Gemini API를 활용하여 실시간 검증된 이슈/뉴스 기반 마케팅 콘텐츠 생성
  */
 export async function generateMarketingContent(): Promise<MarketingContentResponse> {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -53,16 +55,34 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // 랜덤 주제 선택
-    const selectedTopic = MARKETING_TOPICS[Math.floor(Math.random() * MARKETING_TOPICS.length)];
+    // 실시간 뉴스 트렌드 수집
+    const trendNews: TrendNewsArticle | null = await fetchLatestCareerTrend();
+
+    const selectedTopic = trendNews 
+        ? `[실시간 이슈 팩폭] ${trendNews.title}` 
+        : MARKETING_TOPICS[Math.floor(Math.random() * MARKETING_TOPICS.length)];
+
     const draftEthanUrl = process.env.DRAFT_ETHAN_URL || 'https://draft-ethan.com';
     const mytiUrl = process.env.MYTI_URL || 'https://myti-five.vercel.app/';
+
+    const newsContextInstruction = trendNews ? `
+    [🚨 실시간 뉴스 기반 사실(Fact) 원칙 - 필수 준수]
+    - 수집된 실제 뉴스: "${trendNews.title}"
+    - 언론사 출처: ${trendNews.source}
+    - 보도 요약/스니펫: ${trendNews.snippet}
+    
+    ⚠️ 작성 지침 (가짜 뉴스 방지 및 사실 기반 보장):
+    1. 지어낸 통계 수치나 가짜 뉴스, 할루시네이션(환각)은 절대 금지합니다! 뉴스에 명시된 사실과 채용 시장의 객관적 현실만을 바탕으로 작성하세요.
+    2. 콘텐츠(스레드/인스타/카드뉴스)에 반드시 출처를 표기하세요 (예: "📰 출처: ${trendNews.source} 보도 / 실시간 뉴스 분석").
+    3. 이 뉴스가 취준생/이직러의 자소서 작성 및 면접 준비에 미치는 실질적인 영향을 팩폭 톤으로 전달하고, Draft Ethan과 MYTI로 해결책을 제안하세요.
+    ` : '';
 
     const systemInstruction = `
     당신은 2030 취준생 및 이직러의 심리를 정확히 파고드는 B2C SNS 전문 마케터이자 "팩폭 메이트"입니다.
     당신은 두 가지 사이드 프로젝트를 운영하며 마케팅하고 있습니다:
     1. Draft Ethan (AI 자소서 교정 및 평가 서비스 - ${draftEthanUrl})
     2. MYTI (내 안의 취업/이직 페르소나 테스트 - ${mytiUrl})
+    ${newsContextInstruction}
 
     [Draft Ethan 핵심 가치 (USP)]
     - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시
@@ -78,10 +98,10 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
 
     [출력 요구사항]
-    1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, Draft Ethan URL: ${draftEthanUrl} 포함)
+    1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함)
     2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, MYTI URL: ${mytiUrl} 포함, 댓글/저장/공유 유도)
-    3. insta_caption: Draft Ethan 카드뉴스용 인스타그램 캡션 (자극적 헤드라인 + 팩폭/팁 + CTA + 해시태그)
-    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스 슬라이드 텍스트 배열
+    3. insta_caption: Draft Ethan 카드뉴스용 인스타그램 캡션 (자극적 헤드라인 + 뉴스 팩폭/팁 + CTA + 해시태그 + 뉴스 출처 표기)
+    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스 슬라이드 텍스트 배열 (1번 슬라이드에는 이슈 헤드라인과 뉴스 출처 포함)
   `;
 
     const responseSchema: Schema = {

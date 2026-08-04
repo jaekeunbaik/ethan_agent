@@ -1,0 +1,3 @@
+file 'D:/ethan/git/ethan_agent/output_shorts/segment_1.mp4'
+file 'D:/ethan/git/ethan_agent/output_shorts/segment_2.mp4'
+file 'D:/ethan/git/ethan_agent/output_shorts/segment_3.mp4'

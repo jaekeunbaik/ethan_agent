@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc",
         "start": "tsc && node dist/marketingAutomation.js",
-        "test:run": "tsc && node dist/marketingAutomation.js --test"
+        "test:run": "tsc && node dist/marketingAutomation.js --test",
+        "youtube:auth": "tsc && node dist/src/get_youtube_token.js"
     },
     "keywords": [
         "instagram",
@@ -24,9 +25,15 @@
         "@supabase/supabase-js": "*",
         "axios": "*",
         "dotenv": "*",
+        "ffmpeg-static": "^5.3.0",
+        "ffprobe-static": "^3.1.0",
+        "fluent-ffmpeg": "^2.1.3",
+        "google-tts-api": "^2.0.2",
+        "googleapis": "^174.0.0",
         "node-cron": "*"
     },
     "devDependencies": {
+        "@types/fluent-ffmpeg": "^2.1.28",
         "@types/node": "*",
         "@types/node-cron": "*",
         "ts-node": "*",

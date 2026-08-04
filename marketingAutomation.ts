@@ -5,6 +5,9 @@ import { generateMarketingContent, MarketingContentResponse } from './src/conten
 import { renderAllCardNewsSlides } from './src/imageRenderer';
 import { uploadImagesToSupabaseStorage, logMarketingResult } from './src/supabaseLogger';
 import { postToThreads, postCarouselToInstagram } from './src/snsUploader';
+import { createShortsVideo } from './src/shortsRenderer';
+import { uploadToYouTubeShorts } from './src/youtubeUploader';
+import { sendDiscordReport } from './src/discordNotifier';
 
 dotenv.config();
 
@@ -21,23 +24,24 @@ export async function runMarketingPipeline(): Promise<void> {
     let threadsPostId: string | null = null;
     let mytiThreadsPostId: string | null = null;
     let instagramPostId: string | null = null;
+    let youtubeShortsUrl: string | null = null;
 
     try {
         // 1단계: Gemini 2.5 API 기반 마케팅 콘텐츠 자동 생성
-        console.log('🚀 [1/5] Gemini 2.5 API로 오늘의 홍보 콘텐츠 생성 중...');
+        console.log('🚀 [1/6] Gemini 2.5 API로 오늘의 홍보 콘텐츠 생성 중...');
         contentData = await generateMarketingContent();
         console.log(`✅ 콘텐츠 생성 완료! (주제: "${contentData.topic}")`);
         console.log(`- Draft Ethan 스레드 문구: ${contentData.thread_text.substring(0, 40)}...`);
         console.log(`- MYTI 스레드 문구: ${contentData.myti_thread_text.substring(0, 40)}...`);
 
         // 2단계: 카드뉴스 슬라이드 3장 이미지 렌더링 (Draft Ethan용)
-        console.log('\n🎨 [2/5] Draft Ethan 카드뉴스 이미지 렌더링 중...');
+        console.log('\n🎨 [2/6] Draft Ethan 카드뉴스 이미지 렌더링 중...');
         const outputDir = path.join(process.cwd(), 'output_cardnews');
         const localImagePaths = await renderAllCardNewsSlides(contentData.card_news_slides, outputDir);
         console.log(`✅ 이미지 렌더링 완료! (저장 위치: ${outputDir})`);
 
         // 3단계: 임시 공개 이미지 호스트에 카드뉴스 이미지 업로드하여 퍼블릭 URL 획득
-        console.log('\n☁️ [3/5] 임시 이미지 호스팅 서버에 업로드 중...');
+        console.log('\n☁️ [3/6] 임시 이미지 호스팅 서버에 업로드 중...');
         try {
             publicUrls = await uploadImagesToSupabaseStorage(localImagePaths);
         } catch (uploadError: any) {
@@ -45,7 +49,7 @@ export async function runMarketingPipeline(): Promise<void> {
         }
 
         // 4단계: Threads 자동 업로드 (2개 사이드 프로젝트 포스팅)
-        console.log('\n💬 [4/5] Threads API로 스레드 포스팅 업로드 중 (Draft Ethan + MYTI)...');
+        console.log('\n💬 [4/6] Threads API로 스레드 포스팅 업로드 중 (Draft Ethan + MYTI)...');
         
         // 4-1. Draft Ethan 스레드 게시
         try {
@@ -67,7 +71,7 @@ export async function runMarketingPipeline(): Promise<void> {
         }
 
         // 5단계: Instagram Graph API Carousel 자동 업로드 (Draft Ethan)
-        console.log('\n📸 [5/5] Instagram Graph API로 카드뉴스 캐러셀 포스팅 업로드 중...');
+        console.log('\n📸 [5/6] Instagram Graph API로 카드뉴스 캐러셀 포스팅 업로드 중...');
         try {
             if (publicUrls.length > 0) {
                 instagramPostId = await postCarouselToInstagram(publicUrls, contentData.insta_caption);
@@ -81,9 +85,27 @@ export async function runMarketingPipeline(): Promise<void> {
             }
         }
 
+        // 6단계: YouTube Shorts 세로 영상 (.mp4) 자동 합성 및 브랜드 채널 업로드
+        console.log('\n🎬 [6/6] YouTube Shorts 9:16 세로 영상 합성 및 업로드 중...');
+        try {
+            const videoPath = await createShortsVideo(contentData.card_news_slides);
+            const uploadRes = await uploadToYouTubeShorts({
+                videoPath,
+                title: contentData.card_news_slides[0]?.title || `[자소서 팩폭] ${contentData.topic}`,
+                description: contentData.thread_text,
+                tags: ['Shorts', '자소서', '취업', 'DraftEthan', 'AI교정']
+            });
+
+            if (uploadRes.success) {
+                youtubeShortsUrl = uploadRes.videoUrl || null;
+            }
+        } catch (shortsErr: any) {
+            console.error('❌ YouTube Shorts 처리 실패:', shortsErr.message || shortsErr);
+        }
+
         // 결과 판정 및 Database/JSON 로깅
-        const isSuccess = Boolean(threadsPostId || mytiThreadsPostId || instagramPostId);
-        const allSuccess = Boolean(threadsPostId && mytiThreadsPostId && instagramPostId);
+        const isSuccess = Boolean(threadsPostId || mytiThreadsPostId || instagramPostId || youtubeShortsUrl);
+        const allSuccess = Boolean(threadsPostId && mytiThreadsPostId && instagramPostId && youtubeShortsUrl);
         const status = allSuccess ? 'SUCCESS' : (isSuccess ? 'PARTIAL_SUCCESS' : 'FAILED');
 
         await logMarketingResult({
@@ -97,10 +119,22 @@ export async function runMarketingPipeline(): Promise<void> {
             myti_threads_post_id: mytiThreadsPostId,
             instagram_post_id: instagramPostId,
             status: status,
-            error_message: !isSuccess ? 'Threads 및 Instagram 업로드 모두 실패' : null
+            error_message: !isSuccess ? '모든 플랫폼 업로드 실패' : null
         });
 
-        console.log('\n🎉 파이프라인 실행이 완료되었습니다!');
+        // 7단계: Discord 비서 알림 (draft_secretary) 전송
+        await sendDiscordReport({
+            topic: contentData.topic,
+            threadsPostId: threadsPostId,
+            mytiThreadsPostId: mytiThreadsPostId,
+            instagramPostId: instagramPostId,
+            youtubeShortsUrl: youtubeShortsUrl,
+            publicImageUrls: publicUrls,
+            status: status,
+            errorMessage: !isSuccess ? '모든 플랫폼 업로드 실패' : null
+        });
+
+        console.log('\n🎉 파이프라인 실행 및 디스코드 보고서 전송이 완료되었습니다!');
         console.log(`- 최종 상태: ${status}`);
         console.log(`- Draft Ethan Threads Post ID: ${threadsPostId || 'N/A'}`);
         console.log(`- MYTI Threads Post ID: ${mytiThreadsPostId || 'N/A'}`);
@@ -118,6 +152,13 @@ export async function runMarketingPipeline(): Promise<void> {
                 card_news_urls: publicUrls,
                 status: 'FAILED',
                 error_message: error.message || String(error)
+            });
+
+            await sendDiscordReport({
+                topic: contentData.topic,
+                publicImageUrls: publicUrls,
+                status: 'FAILED',
+                errorMessage: error.message || String(error)
             });
         }
     }
