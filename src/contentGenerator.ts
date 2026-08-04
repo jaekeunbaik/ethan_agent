@@ -97,12 +97,13 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     - 💥 팩폭 특징 3가지 & 환상의/환장의 짝꿍 케미 분석
     - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
 
-    [유튜브 쇼츠 썰툰/스토리 3단계 카피라이팅 원칙 (필수)]
-    - 톤앤매너: 친한 친구에게 썰 풀듯 "~했거든?", "~인 거야", "~라고 하더라고" 구어체 사용.
-    - 1문장은 10자 내외로 짧게 끊어서 빠르고 흥미진진한 호흡 유지!
-    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 핫이슈로 훅! ("야 한화에서 20조 부어서 대규모 채용 시작했거든?")
-    - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 현실 팩폭 비교 (BEFORE 탈락 자소서 vs AFTER 합격 자소서)
-    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 팩폭 교정 제안 & 프로필 링크 유도!
+    [유튜브 쇼츠 썰툰/스토리 3단계 카피라이팅 원칙 (필수 준수)]
+    - ⚠️ 모든 card_news_slides의 title, subtitle, contentLines 문장은 절대로 뉴스 기사체나 존댓말(~입니다, ~했습니다)을 쓰지 마세요!
+    - 100% 친한 친구에게 썰 풀듯 텐션 높은 반말/썰 스피치 구어체(~했거든?, ~인 거야, ~라고 하더라고, ~해봐!)로만 작성하세요!
+    - 1문장은 10자 내외로 짧게 끊어서 빠르고 드라마틱한 호흡 유지!
+    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 핫이슈로 훅! ("야 이번에 대규모 채용 소식 들었냐?")
+    - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 팩폭 비교 ("아직도 열정만 적고 3초 만에 광탈당하더라?")
+    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 팩폭 교정 제안 ("드래프트 이든 AI에서 3초 만에 팩폭 교정받고 합격하자!")
 
     [출력 요구사항]
     1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함)
