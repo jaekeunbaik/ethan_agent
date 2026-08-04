@@ -22,6 +22,45 @@ export interface MarketingContentResponse {
     news_source?: string;
 }
 
+export interface SpeechTonePreset {
+    id: string;
+    name: string;
+    description: string;
+    endingExamples: string;
+    promptInstruction: string;
+}
+
+export const SPEECH_TONE_PRESETS: SpeechTonePreset[] = [
+    {
+        id: 'STORY',
+        name: '🎭 100% 썰 스피치 톤 (친한 친구 썰 풀기)',
+        description: '친한 친구에게 카페에서 대박 소식 알려주듯 흥미진진하고 빠른 호흡의 구어체',
+        endingExamples: '~했거든?, ~인 거야, ~라고 하더라고, ~해봐!',
+        promptInstruction: '친한 친구에게 썰 풀듯 "~했거든?", "~인 거야", "~라고 하더라고", "~해봐!" 어미를 사용하는 100% 썰 스피치 반말 구어체로 작성하세요.'
+    },
+    {
+        id: 'SPICY',
+        name: '💥 매운맛 팩폭 코치 톤 (직설적 사이다)',
+        description: '취준생의 뼈를 때리는 사이다 직언과 직설적인 조언 톤',
+        endingExamples: '~지 마라, ~인 거 알지?, ~하면 바로 광탈임, ~해라!',
+        promptInstruction: '취준생의 뼈를 때리는 직설 사이다 톤으로 "~지 마라", "~인 거 알지?", "~하면 바로 광탈임", "~해라!" 어미를 사용하는 매운맛 반말 구어체로 작성하세요.'
+    },
+    {
+        id: 'SECRET',
+        name: '🤫 비밀 제보 꿀팁 톤 (취준생 꿀정보 공유)',
+        description: '남들은 잘 모르는 합격 치트키를 비밀스럽게 털어놓는 듯한 톤',
+        endingExamples: '~만 비밀로 알려줌, ~ 모르면 손해임, ~ 챙겨가라!',
+        promptInstruction: '합격 비밀을 털어놓듯 "~만 비밀로 알려줌", "~ 모르면 손해임", "~ 챙겨가라!" 어미를 사용하는 꿀팁 제보 톤으로 작성하세요.'
+    },
+    {
+        id: 'AI_FACT',
+        name: '🤖 AI 데이터 팩트 폭격 톤 (스마트 분석가)',
+        description: '데이터와 수치로 서류 탈락 원인을 정밀하게 짚어내는 스마트 분석 톤',
+        endingExamples: '~ 감지 완료, ~ 수치 미달임, ~ 강력 추천함!',
+        promptInstruction: '데이터와 수치를 강조하는 스마트 AI 분석가 톤으로 "~ 감지 완료", "~ 수치 미달임", "~ 추천함" 어미를 사용하는 팩트 폭격 반말 톤으로 작성하세요.'
+    }
+];
+
 const MARKETING_TOPICS = [
     // [프로필 고정 게시물 Pinned Posts]
     '[서비스 소개] 3초 만에 자소서 평가받는 법 (무료 혜택)',
@@ -47,7 +86,7 @@ const MARKETING_TOPICS = [
 /**
  * Gemini API를 활용하여 실시간 검증된 이슈/뉴스 기반 마케팅 콘텐츠 생성
  */
-export async function generateMarketingContent(): Promise<MarketingContentResponse> {
+export async function generateMarketingContent(toneId?: string): Promise<MarketingContentResponse> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error('GEMINI_API_KEY가 .env에 설정되어 있지 않습니다.');
@@ -77,6 +116,10 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     3. 이 뉴스가 취준생/이직러의 자소서 작성 및 면접 준비에 미치는 실질적인 영향을 팩폭 톤으로 전달하고, Draft Ethan과 MYTI로 해결책을 제안하세요.
     ` : '';
 
+    const targetToneId = toneId || process.env.SHORTS_TONE || 'STORY';
+    const selectedTone = SPEECH_TONE_PRESETS.find(t => t.id === targetToneId) || SPEECH_TONE_PRESETS[0];
+    console.log(`[ContentGenerator] 🎭 적용된 쇼츠 말투 컨셉: ${selectedTone.name} (${selectedTone.endingExamples})`);
+
     const systemInstruction = `
     당신은 2030 취준생 및 이직러의 심리를 정확히 파고드는 B2C SNS 전문 마케터이자 "팩폭 메이트"입니다.
     당신은 두 가지 사이드 프로젝트를 운영하며 마케팅하고 있습니다:
@@ -97,13 +140,14 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     - 💥 팩폭 특징 3가지 & 환상의/환장의 짝꿍 케미 분석
     - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
 
-    [유튜브 쇼츠 썰툰/스토리 3단계 카피라이팅 원칙 (필수 준수)]
-    - ⚠️ 모든 card_news_slides의 title, subtitle, contentLines 문장은 절대로 뉴스 기사체나 존댓말(~입니다, ~했습니다)을 쓰지 마세요!
-    - 100% 친한 친구에게 썰 풀듯 텐션 높은 반말/썰 스피치 구어체(~했거든?, ~인 거야, ~라고 하더라고, ~해봐!)로만 작성하세요!
+    [유튜브 쇼츠 3단계 카피라이팅 말투 원칙 (필수 준수)]
+    - 선택된 컨셉: ${selectedTone.name}
+    - 어미 스타일: ${selectedTone.endingExamples}
+    - ⚠️ ${selectedTone.promptInstruction} 절대로 존댓말(~입니다, ~했습니다)이나 경어체를 쓰지 마세요!
     - 1문장은 10자 내외로 짧게 끊어서 빠르고 드라마틱한 호흡 유지!
-    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 핫이슈로 훅! ("야 이번에 대규모 채용 소식 들었냐?")
-    - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 팩폭 비교 ("아직도 열정만 적고 3초 만에 광탈당하더라?")
-    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 팩폭 교정 제안 ("드래프트 이든 AI에서 3초 만에 팩폭 교정받고 합격하자!")
+    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 핫이슈로 훅!
+    - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 팩폭 비교 (BEFORE vs AFTER)
+    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 팩폭 교정 제안
 
     [출력 요구사항]
     1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함)
