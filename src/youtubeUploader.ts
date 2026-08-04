@@ -47,8 +47,8 @@ export async function uploadToYouTubeShorts(params: YouTubeUploadParams): Promis
 
         const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
 
-        // 제목 및 설명에 #Shorts 태그 자동 부합
-        let finalTitle = params.title;
+        // 줄바꿈(\n, \r) 및 연속 공백 제거하여 유튜브 API 호환 한 줄 타이틀 생성
+        let finalTitle = params.title.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
         if (!finalTitle.toLowerCase().includes('#shorts')) {
             finalTitle += ' #Shorts';
         }
