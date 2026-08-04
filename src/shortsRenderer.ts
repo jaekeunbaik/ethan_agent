@@ -309,8 +309,26 @@ export async function generateShortsSlideImages(
 
 async function generateTTSAudioForText(text: string, outputPath: string): Promise<string> {
     try {
-        const cleanText = stripEmojis(text);
+        let cleanText = text
+            .replace(/Ethan/gi, '이든')
+            .replace(/에단/g, '이든')
+            .replace(/출처:.*$/gm, '')
+            .trim();
+
         if (!cleanText) return '';
+
+        const candidateVoices = ['ko-KR-InJoonNeural', 'ko-KR-SunHiNeural'];
+        const voice = process.env.SHORTS_VOICE || candidateVoices[Math.floor(Math.random() * candidateVoices.length)];
+        try {
+            const { execSync } = require('child_process');
+            execSync(`python -m edge_tts --voice ${voice} --text ${JSON.stringify(cleanText)} --write-media ${JSON.stringify(outputPath)}`);
+            if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+                console.log(`[ShortsRenderer] 🎙️ 고품질 신경망 성우(${voice}) 음성 생성 완료!`);
+                return outputPath;
+            }
+        } catch (edgeErr: any) {
+            console.warn('[ShortsRenderer] ⚠️ Edge TTS 실행 실패, 구글 기본 TTS로 폴백:', edgeErr.message);
+        }
 
         const chunks: string[] = [];
         let remaining = cleanText;
