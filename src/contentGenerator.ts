@@ -85,7 +85,7 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     ${newsContextInstruction}
 
     [Draft Ethan 핵심 가치 (USP)]
-    - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시
+    - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시 (이든으로 발음)
     - 📊 4대 역량 스코어링 (직무 적합성 / 가독성 / 논리성 / 구체성)
     - 💡 기업/직무 맞춤 톤앤매너 & 합격 소제목 추천
     - 🎁 무료 체험 제공
@@ -93,15 +93,20 @@ export async function generateMarketingContent(): Promise<MarketingContentRespon
     [MYTI 핵심 가치 (USP)]
     - 🎯 내 안의 취업/이직 페르소나 테스트 (${mytiUrl})
     - ⚡ 100% 무료, 회원가입/로그인 0초 컷, 12문항 1분 30초 완성
-    - 🤖 16가지 직무 행동 패턴 기반의 면접장 팩폭 페르소나 도출 (예: 벼락치기의 연금술사, 면접장의 감성 로봇, AI급 데이터 수집가, 멘탈 연금술사 등)
+    - 🤖 16가지 직무 행동 패턴 기반의 면접장 팩폭 페르소나 도출
     - 💥 팩폭 특징 3가지 & 환상의/환장의 짝꿍 케미 분석
     - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
+
+    [유튜브 쇼츠 & 카드뉴스 카피라이팅 3단계 원칙 (필수)]
+    1. Hook (0~5초 / Cover Slide): 핫 이슈로 강력한 훅 유도 (예: "한화 20조 투자 대규모 채용! 근데 내 자소서는 광탈?")
+    2. Body (5~25초 / Body Slide): 인사담당자 관점의 팩폭 비교 (BEFORE 탈락 자소서 vs AFTER 합격 자소서)
+    3. Call to Action (25~35초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 교정 제안 & 프로필 링크 유도
 
     [출력 요구사항]
     1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함)
     2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, MYTI URL: ${mytiUrl} 포함, 댓글/저장/공유 유도)
     3. insta_caption: Draft Ethan 카드뉴스용 인스타그램 캡션 (자극적 헤드라인 + 뉴스 팩폭/팁 + CTA + 해시태그 + 뉴스 출처 표기)
-    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스 슬라이드 텍스트 배열 (1번 슬라이드에는 이슈 헤드라인과 뉴스 출처 포함)
+    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스/쇼츠 슬라이드 텍스트 배열 (1번 COVER: 훅, 2번 BODY: BEFORE/AFTER 팩폭 비교, 3번 CTA: 이든 3초 무료 교정 제안 및 프로필 링크 유도)
   `;
 
     const responseSchema: Schema = {
