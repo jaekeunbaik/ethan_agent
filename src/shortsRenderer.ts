@@ -367,10 +367,12 @@ export async function createShortsVideo(
         let speechText = `${cleanTitle}. ${cleanSubtitle}. `;
         readContentLines.forEach(l => speechText += `${l}. `);
 
-        // 2) 'Ethan' / 'ETHAN' / 'Draft Ethan'을 한국어 발음인 '[이든]'으로 변환
+        // 2) 'Ethan' / 'ETHAN' / '에단' 발음을 모두 확실하게 '[이든]'으로 변환
         speechText = speechText
             .replace(/Draft\s*Ethan/gi, '드래프트 이든')
-            .replace(/Ethan/gi, '이든');
+            .replace(/드래프트\s*에단/gi, '드래프트 이든')
+            .replace(/Ethan/gi, '이든')
+            .replace(/에단/gi, '이든');
 
         const aPath = path.join(outputDir, `tts_slide_${i + 1}.mp3`);
         await generateTTSAudioForText(speechText, aPath);
