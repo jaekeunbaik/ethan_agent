@@ -358,11 +358,22 @@ export async function createShortsVideo(
 
     for (let i = 0; i < slides.length; i++) {
         const s = slides[i];
-        let text = `${s.title}. ${s.subtitle || ''}. `;
-        s.contentLines.forEach(l => text += `${l}. `);
+        
+        // 1) 출처 텍스트는 화면 하단에만 표시하고 음성(TTS)에서는 읽지 않도록 제외
+        const cleanTitle = s.title.replace(/출처\s*:\s*.*$/gi, '').trim();
+        const cleanSubtitle = (s.subtitle || '').replace(/출처\s*:\s*.*$/gi, '').trim();
+        const readContentLines = s.contentLines.filter(l => !/출처/i.test(l));
+
+        let speechText = `${cleanTitle}. ${cleanSubtitle}. `;
+        readContentLines.forEach(l => speechText += `${l}. `);
+
+        // 2) 'Ethan' / 'ETHAN' / 'Draft Ethan'을 한국어 발음인 '[이든]'으로 변환
+        speechText = speechText
+            .replace(/Draft\s*Ethan/gi, '드래프트 이든')
+            .replace(/Ethan/gi, '이든');
 
         const aPath = path.join(outputDir, `tts_slide_${i + 1}.mp3`);
-        await generateTTSAudioForText(text, aPath);
+        await generateTTSAudioForText(speechText, aPath);
         const rawDur = await getAudioDuration(aPath);
 
         // 슬라이드 1, 2는 음성 끝난 후 0.5초 여백, 마지막 CTA 슬라이드는 2.5초 여백 보장!
