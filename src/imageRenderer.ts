@@ -91,13 +91,17 @@ const ITEM_COLORS = currentTheme.itemColors;
 function stripEmojis(text: string): string {
     if (!text) return '';
     return text
-        .replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
-        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        .replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{FE0F}]/gu, '')
+        .replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2018-\u201F]|\uD83E[\uDD10-\uDDFF]/g, '')
+        .replace(/[\u{10000}-\u{10FFFF}]/gu, '')
+        .replace(/[⚡🔥❌✅⬇️⬆️🎉👉📈📊🎁📰📌🤫🎭💥🤖➔]/g, '')
         .trim();
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const words = text.split(' ');
+    const clean = stripEmojis(text);
+    if (!clean) return [];
+    const words = clean.split(' ');
     const lines: string[] = [];
     let currentLine = words[0] || '';
     for (let i = 1; i < words.length; i++) {
