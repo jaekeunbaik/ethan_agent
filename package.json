@@ -7,7 +7,10 @@
         "build": "tsc",
         "start": "tsc && node dist/marketingAutomation.js",
         "test:run": "tsc && node dist/marketingAutomation.js --test",
-        "youtube:auth": "tsc && node dist/src/get_youtube_token.js"
+        "youtube:auth": "tsc && node dist/src/get_youtube_token.js",
+        "run:all": "ts-node run_all.ts",
+        "run:katalk": "ts-node run_kakaotalk_shorts.ts",
+        "run:news": "ts-node run_news_shorts.ts"
     },
     "keywords": [
         "instagram",
