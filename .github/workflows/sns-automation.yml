@@ -35,7 +35,7 @@ jobs:
     - name: Build TypeScript
       run: npm run build
 
-    - name: Run SNS Marketing Pipeline
+    - name: Run Master All Shorts & SNS Marketing Pipeline
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
@@ -49,5 +49,4 @@ jobs:
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-      # 스케줄러 실행 시 1회 포스팅을 즉시 올리도록 --test(즉시실행) 모드로 수행합니다
-      run: node dist/marketingAutomation.js --test
+      run: npx ts-node run_all.ts
