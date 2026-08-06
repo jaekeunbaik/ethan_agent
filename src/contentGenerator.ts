@@ -145,9 +145,9 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     - 어미 스타일: ${selectedTone.endingExamples}
     - ⚠️ ${selectedTone.promptInstruction} 절대로 존댓말(~입니다, ~했습니다)이나 경어체를 쓰지 마세요!
     - 1문장은 10자 내외로 짧게 끊어서 빠르고 드라마틱한 호흡 유지!
-    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 핫이슈로 훅!
+    - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 자극적인 핫이슈 훅!
     - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 팩폭 비교 (BEFORE vs AFTER)
-    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 AI 팩폭 교정 제안
+    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 교정 제안 + 댓글 유도 퀴즈 (예: "Q. 너 자소서는 1번(비포)이야 2번(애프터)이야? 댓글 남겨봐!")
 
     [출력 요구사항]
     1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함)

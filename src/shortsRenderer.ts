@@ -578,20 +578,52 @@ export async function createShortsVideo(
 
     const finalShortsVideo = path.join(outputDir, 'youtube_shorts.mp4');
 
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
         ffmpeg()
             .input(concatListPath)
             .inputOptions(['-f concat', '-safe 0'])
             .outputOptions(['-c copy'])
             .output(finalShortsVideo)
-            .on('end', () => {
-                console.log(`[ShortsRenderer] 🎉 슬라이드별 1:1 완벽 음성 싱크 쇼츠 동영상 완성!: ${finalShortsVideo}`);
-                resolve(finalShortsVideo);
-            })
+            .on('end', resolve)
             .on('error', (err) => {
                 console.error('[ShortsRenderer] ❌ 세그먼트 병합 실패:', err.message);
                 reject(err);
             })
             .run();
     });
+
+    // 4. 배경음악(BGM) 파일이 assets/bgm.mp3 에 존재할 경우 은은하게 오디오 오버레이 합성
+    const bgmPath = path.join(process.cwd(), 'assets', 'bgm.mp3');
+    if (fs.existsSync(bgmPath)) {
+        console.log('[ShortsRenderer] 🎵 배경음악(BGM) 은은하게(-20dB) 오버레이 합성 중...');
+        const finalWithBgm = path.join(outputDir, 'youtube_shorts_bgm.mp4');
+        await new Promise((resolve) => {
+            ffmpeg(finalShortsVideo)
+                .input(bgmPath)
+                .outputOptions([
+                    '-filter_complex', '[1:a]volume=0.12[bgm];[0:a][bgm]amix=inputs=2:duration=first[aout]',
+                    '-map 0:v:0',
+                    '-map [aout]',
+                    '-c:v copy',
+                    '-c:a aac'
+                ])
+                .output(finalWithBgm)
+                .on('end', () => {
+                    if (fs.existsSync(finalWithBgm)) {
+                        fs.copyFileSync(finalWithBgm, finalShortsVideo);
+                        fs.unlinkSync(finalWithBgm);
+                    }
+                    console.log('[ShortsRenderer] 🎵 BGM 합성 완성!');
+                    resolve(true);
+                })
+                .on('error', (err) => {
+                    console.warn('[ShortsRenderer] ⚠️ BGM 합성 실패, 기본 나레이션 유지:', err.message);
+                    resolve(false);
+                })
+                .run();
+        });
+    }
+
+    console.log(`[ShortsRenderer] 🎉 9:16 알고리즘 폭격 쇼츠 동영상 완성!: ${finalShortsVideo}`);
+    return finalShortsVideo;
 }
