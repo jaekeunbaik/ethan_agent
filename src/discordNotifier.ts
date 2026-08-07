@@ -42,22 +42,30 @@ export async function sendDiscordReport(payload: MarketingNotificationPayload): 
             },
             {
                 name: '💬 Draft Ethan Threads',
-                value: payload.threadsPostId ? `✅ 업로드 완료 (\`ID: ${payload.threadsPostId}\`)` : '❌ 업로드 실패/건너뜀',
+                value: payload.threadsPostId !== undefined 
+                    ? (payload.threadsPostId ? `✅ 업로드 완료 (\`ID: ${payload.threadsPostId}\`)` : '❌ 업로드 실패')
+                    : '➖ 선택 실행 대상 제외',
                 inline: true
             },
             {
                 name: '🎯 MYTI Threads',
-                value: payload.mytiThreadsPostId ? `✅ 업로드 완료 (\`ID: ${payload.mytiThreadsPostId}\`)` : '❌ 업로드 실패/건너뜀',
+                value: payload.mytiThreadsPostId !== undefined 
+                    ? (payload.mytiThreadsPostId ? `✅ 업로드 완료 (\`ID: ${payload.mytiThreadsPostId}\`)` : '❌ 업로드 실패')
+                    : '➖ 이번 파이프라인 스킵',
                 inline: true
             },
             {
                 name: '📸 Instagram Carousel',
-                value: payload.instagramPostId ? `✅ 업로드 완료 (\`ID: ${payload.instagramPostId}\`)` : '❌ 업로드 실패/건너뜀',
+                value: payload.instagramPostId !== undefined 
+                    ? (payload.instagramPostId ? `✅ 업로드 완료 (\`ID: ${payload.instagramPostId}\`)` : '❌ 업로드 실패')
+                    : '➖ 이번 파이프라인 스킵',
                 inline: true
             },
             {
                 name: '🎬 YouTube Shorts (힐링 사운드)',
-                value: payload.youtubeShortsUrl ? `✅ [쇼츠 영상 보기](${payload.youtubeShortsUrl})` : '❌ 업로드 실패/건너뜀',
+                value: payload.youtubeShortsUrl !== undefined 
+                    ? (payload.youtubeShortsUrl ? `✅ [쇼츠 영상 보기](${payload.youtubeShortsUrl})` : '❌ 업로드 실패')
+                    : '➖ 선택 실행 대상 제외',
                 inline: false
             }
         ];

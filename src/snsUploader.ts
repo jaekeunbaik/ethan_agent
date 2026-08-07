@@ -34,7 +34,67 @@ async function getEffectiveAccessToken(instagramAccountId: string, userToken: st
 }
 
 /**
- * 1. Threads API: 스레드 숏폼 포스팅 자동 게시
+ * Threads 미디어 컨테이너 상태 폴링 (FINISHED 대기)
+ */
+async function waitForThreadsContainerReady(creationId: string, accessToken: string): Promise<void> {
+    const maxRetries = 15;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const statusRes = await axios.get(`https://graph.threads.net/v1.0/${creationId}`, {
+                params: {
+                    fields: 'status,error_message',
+                    access_token: accessToken
+                }
+            });
+            const status = statusRes.data?.status;
+            console.log(`[Threads] 컨테이너 상태 대기 중 (${i + 1}/${maxRetries}): ${status || 'CHECKING...'}`);
+
+            if (status === 'FINISHED' || status === 'PUBLISHED') {
+                return;
+            }
+            if (status === 'ERROR') {
+                throw new Error(`Threads 미디어 처리 에러: ${statusRes.data?.error_message || 'Unknown error'}`);
+            }
+        } catch (e: any) {
+            if (e.message?.includes('Threads 미디어 처리 에러')) throw e;
+            console.warn(`[Threads] 상태 확인 경고 (${i + 1}/${maxRetries}):`, e.message || e);
+        }
+        await new Promise((res) => setTimeout(res, 2000));
+    }
+}
+
+/**
+ * Instagram 미디어 컨테이너 상태 폴링 (FINISHED 대기)
+ */
+async function waitForInstagramContainerReady(containerId: string, accessToken: string, apiBase: string): Promise<void> {
+    const maxRetries = 20;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const statusRes = await axios.get(`${apiBase}/${containerId}`, {
+                params: {
+                    fields: 'status_code,status,error_message',
+                    access_token: accessToken
+                }
+            });
+            const statusCode = statusRes.data?.status_code;
+            console.log(`[Instagram] 컨테이너 (${containerId}) 처리 대기 중 (${i + 1}/${maxRetries}): ${statusCode || 'CHECKING...'}`);
+
+            if (statusCode === 'FINISHED' || statusCode === 'PUBLISHED') {
+                return;
+            }
+            if (statusCode === 'ERROR') {
+                throw new Error(`Instagram 미디어 처리 에러: ${statusRes.data?.error_message || JSON.stringify(statusRes.data)}`);
+            }
+        } catch (e: any) {
+            if (e.message?.includes('Instagram 미디어 처리 에러')) throw e;
+            console.warn(`[Instagram] 상태 확인 경고 (${i + 1}/${maxRetries}):`, e.message || e);
+        }
+        await new Promise((res) => setTimeout(res, 2000));
+    }
+}
+
+/**
+ * 1. Threads API: 스레드 숏폼 포스팅 자동 게시 (재시도 로직 포함)
  */
 export async function postToThreads(threadText: string): Promise<string> {
     const threadsUserId = process.env.THREADS_USER_ID;
@@ -44,44 +104,60 @@ export async function postToThreads(threadText: string): Promise<string> {
         throw new Error('THREADS_USER_ID 또는 THREADS_ACCESS_TOKEN이 설정되지 않았습니다.');
     }
 
-    console.log('[Threads] 스레드 포스팅 컨테이너 생성 중...');
+    let lastError: any = null;
+    const maxAttempts = 3;
 
-    // Step 1: Create Threads Media Container
-    const createContainerUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads`;
-    const containerRes = await axios.post(createContainerUrl, null, {
-        params: {
-            media_type: 'TEXT',
-            text: threadText,
-            access_token: accessToken
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            console.log(`[Threads] 스레드 포스팅 컨테이너 생성 중... (시도 ${attempt}/${maxAttempts})`);
+
+            // Step 1: Create Threads Media Container
+            const createContainerUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads`;
+            const containerRes = await axios.post(createContainerUrl, null, {
+                params: {
+                    media_type: 'TEXT',
+                    text: threadText,
+                    access_token: accessToken
+                }
+            });
+
+            const creationId = containerRes.data?.id;
+            if (!creationId) {
+                throw new Error(`스레드 컨테이너 생성 실패: ${JSON.stringify(containerRes.data)}`);
+            }
+
+            console.log(`[Threads] 스레드 컨테이너 생성 완료 (ID: ${creationId}). 게재 가능 상태 확인 중...`);
+
+            // 미디어 컨테이너 준공 상태 폴링 확인
+            await waitForThreadsContainerReady(creationId, accessToken);
+
+            // Step 2: Publish Threads Container
+            const publishUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`;
+            const publishRes = await axios.post(publishUrl, null, {
+                params: {
+                    creation_id: creationId,
+                    access_token: accessToken
+                }
+            });
+
+            const threadsPostId = publishRes.data?.id;
+            if (!threadsPostId) {
+                throw new Error(`스레드 포스팅 게시 실패: ${JSON.stringify(publishRes.data)}`);
+            }
+
+            console.log(`[Threads] 스레드 포스팅 게시 성공! (Post ID: ${threadsPostId})`);
+            return threadsPostId;
+        } catch (err: any) {
+            lastError = err;
+            console.warn(`⚠️ [Threads] 시도 ${attempt} 실패:`, err.message || err);
+            if (attempt < maxAttempts) {
+                console.log(`[Threads] 5초 후 재시도합니다...`);
+                await new Promise((res) => setTimeout(res, 5000));
+            }
         }
-    });
-
-    const creationId = containerRes.data?.id;
-    if (!creationId) {
-        throw new Error(`스레드 컨테이너 생성 실패: ${JSON.stringify(containerRes.data)}`);
     }
 
-    console.log(`[Threads] 스레드 컨테이너 생성 완료 (ID: ${creationId}). 게재(Publish) 대기 중 (3초)...`);
-
-    // Meta 서버 복제 대기 시간 부여
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    // Step 2: Publish Threads Container
-    const publishUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`;
-    const publishRes = await axios.post(publishUrl, null, {
-        params: {
-            creation_id: creationId,
-            access_token: accessToken
-        }
-    });
-
-    const threadsPostId = publishRes.data?.id;
-    if (!threadsPostId) {
-        throw new Error(`스레드 포스팅 게시 실패: ${JSON.stringify(publishRes.data)}`);
-    }
-
-    console.log(`[Threads] 스레드 포스팅 게시 성공! (Post ID: ${threadsPostId})`);
-    return threadsPostId;
+    throw lastError || new Error('Threads 게시 중 오류가 발생했습니다.');
 }
 
 /**
@@ -107,9 +183,9 @@ export async function postCarouselToInstagram(
     const apiBase = isInstagramLogin ? 'https://graph.instagram.com/v21.0' : 'https://graph.facebook.com/v21.0';
     const accessToken = isInstagramLogin ? userAccessToken : await getEffectiveAccessToken(instagramAccountId, userAccessToken);
 
-    console.log(`[Instagram] 총 ${imagePublicUrls.length}장의 개별 아이템 컨테이너 생성 중...`);
+    console.log(`[Instagram] 총 ${imagePublicUrls.length}장의 개별 아이템 컨테이너 생성 및 처리 확인 중...`);
 
-    // Step 1: Create Item Containers for each image URL
+    // Step 1: Create Item Containers for each image URL & wait for readiness
     const itemContainerIds: string[] = [];
     for (let i = 0; i < imagePublicUrls.length; i++) {
         const imageUrl = imagePublicUrls[i];
@@ -127,8 +203,10 @@ export async function postCarouselToInstagram(
         if (!itemId) {
             throw new Error(`인스타그램 아이템 ${i + 1} 슬라이드 컨테이너 생성 실패: ${JSON.stringify(itemRes.data)}`);
         }
+
+        console.log(`[Instagram] 슬라이드 ${i + 1} 아이템 컨테이너 생성 (ID: ${itemId}). 처리 상태 확인 중...`);
+        await waitForInstagramContainerReady(itemId, accessToken, apiBase);
         itemContainerIds.push(itemId);
-        console.log(`[Instagram] 슬라이드 ${i + 1} 아이템 컨테이너 생성 완료 (ID: ${itemId})`);
     }
 
     // Step 2: Create Carousel Parent Container
@@ -148,10 +226,8 @@ export async function postCarouselToInstagram(
         throw new Error(`인스타그램 캐러셀 컨테이너 생성 실패: ${JSON.stringify(carouselRes.data)}`);
     }
 
-    console.log(`[Instagram] 캐러셀 컨테이너 생성 완료 (ID: ${carouselContainerId}). 처리 완료 대기 중 (5초)...`);
-
-    // Meta 서버 미디어 업로드 처리 대기
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log(`[Instagram] 캐러셀 부모 컨테이너 생성 완료 (ID: ${carouselContainerId}). 게재 준비 확인 중...`);
+    await waitForInstagramContainerReady(carouselContainerId, accessToken, apiBase);
 
     // Step 3: Publish Carousel Container
     console.log('[Instagram] 캐러셀 게시물 최종 게시(Publish) 진행 중...');

@@ -59,8 +59,8 @@ export async function runMarketingPipeline(): Promise<void> {
             console.error('❌ Draft Ethan Threads 업로드 실패:', threadsErr.message || threadsErr);
         }
 
-        // 스레드 연속 게시 간 5초 딜레이
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        // 스레드 연속 게시 간 15초 딜레이 (Rate Limit 및 중복 방지)
+        await new Promise((resolve) => setTimeout(resolve, 15000));
 
         // 4-2. MYTI 페르소나 테스트 스레드 게시 (Threads 전용)
         try {

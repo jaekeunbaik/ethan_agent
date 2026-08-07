@@ -110,6 +110,24 @@ export async function uploadImagesToSupabaseStorage(imagePaths: string[]): Promi
             }
         }
 
+        // 3차 시도 (Fallback): tmpfiles.org
+        if (!uploadedUrl) {
+            try {
+                const formDataTmp = new FormData();
+                formDataTmp.append('file', fs.createReadStream(filePath));
+                const resTmp = await axios.post('https://tmpfiles.org/api/v1/upload', formDataTmp, {
+                    headers: formDataTmp.getHeaders(),
+                    timeout: 20000
+                });
+                if (resTmp.data?.data?.url) {
+                    uploadedUrl = resTmp.data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                    console.log(`[ImageUploader] 슬라이드 ${i + 1} 3차 업로드 성공 (tmpfiles.org) -> ${uploadedUrl}`);
+                }
+            } catch (tmpErr: any) {
+                console.error(`❌ [ImageUploader] 슬라이드 ${i + 1} 3차 업로드 실패 (tmpfiles.org):`, tmpErr.message);
+            }
+        }
+
         if (!uploadedUrl) {
             throw new Error(`슬라이드 ${i + 1} 이미지의 퍼블릭 호스팅 업로드에 완전히 실패했습니다.`);
         }
