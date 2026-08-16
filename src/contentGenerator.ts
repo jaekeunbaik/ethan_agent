@@ -1,6 +1,7 @@
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { Type, Schema } from '@google/genai';
 import dotenv from 'dotenv';
 import { fetchLatestCareerTrend, TrendNewsArticle } from './trendFetcher';
+import { generateContentWithFallback } from './geminiHelper';
 
 dotenv.config();
 
@@ -62,38 +63,24 @@ export const SPEECH_TONE_PRESETS: SpeechTonePreset[] = [
 ];
 
 const MARKETING_TOPICS = [
-    // [프로필 고정 게시물 Pinned Posts]
     '[서비스 소개] 3초 만에 자소서 평가받는 법 (무료 혜택)',
     '[대표 B&A] 서류 탈락하는 자소서 vs 합격하는 자소서 차이 (Diff 시연)',
     '[브랜드 스토리] 우리가 10만 원짜리 자소서 컨설팅을 AI로 만든 이유',
-
-    // [Concept A: 팩폭 Before & After]
     '"어릴 적부터 진취적이었던 저는..." 자소서 망하는 대표 문장 심폐소생',
     '서류 탈락하는 자소서엔 이것이 없습니다: AI 비포 & 애프터 1:1 교정',
     '대기업 합격자소서 비포 & 애프터: 문장 하나로 서류 합불이 갈리는 이유',
-
-    // [Concept B: 직무별/기업별 맞춤 자소서 치트키]
     '마케터 지원자가 자소서에 절대 쓰면 안 되는 금지어 5가지',
     '개발자/영업직 자소서 톤앤매너 설정법 (논리형 vs 자신감형)',
     '합격률 높여주는 항목별 소제목(Headline) 템플릿 모음',
     '자소서 서두 10초 만에 훑어보는 면접관을 사로잡는 두괄식 작성 공식',
-
-    // [Concept C & D: 숏폼 & 참여형]
     '자소서 첨삭에 10만 원 쓴 친구 오열하는 영상: 3초 완성 AI 교정',
     '소제목 못 짜서 밤새는 취준생 구함: Draft Ethan 소제목 자동 추출'
 ];
 
 /**
- * Gemini API를 활용하여 실시간 검증된 이슈/뉴스 기반 마케팅 콘텐츠 생성
+ * Gemini API를 활용하여 실시간 검증된 이슈/뉴스 기반 마케팅 콘텐츠 생성 (멀티 모델 자동 폴백 내장)
  */
 export async function generateMarketingContent(toneId?: string): Promise<MarketingContentResponse> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error('GEMINI_API_KEY가 .env에 설정되어 있지 않습니다.');
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-
     // 실시간 뉴스 트렌드 수집
     const trendNews: TrendNewsArticle | null = await fetchLatestCareerTrend();
 
@@ -101,7 +88,7 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
         ? `[실시간 이슈 팩폭] ${trendNews.title}` 
         : MARKETING_TOPICS[Math.floor(Math.random() * MARKETING_TOPICS.length)];
 
-    const draftEthanUrl = process.env.DRAFT_ETHAN_URL || 'https://draft-ethan.com';
+    const draftEthanUrl = process.env.DRAFT_ETHAN_URL || 'https://draft-ethan.vercel.app/';
     const mytiUrl = process.env.MYTI_URL || 'https://myti-five.vercel.app/';
 
     const newsContextInstruction = trendNews ? `
@@ -154,7 +141,7 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, "👉 프로필 링크에서 1분 30초 컷 취업 MBTI 테스트 해봐!", 댓글/저장/공유 유도)
     3. insta_caption: dethan(디든) 인스타그램 캡션 (호기심 유발 헤드라인 + 뉴스 팩폭/팁 + "👉 지금 바로 프로필 링크(@계정)에서 3초 무료 팩폭 검수 받아보세요!" + "💬 댓글로 '자소서' 남겨주시면 1:1 무료 검수 쿠폰 쏴드립니다!" + 인기 해시태그 10개 내외: #자소서 #자소서첨삭 #디든 #취준생 #이직 #자기소개서 #취업준비 #면접팁 #합격자소서)
     4. card_news_slides: 정확히 3장의 dethan(디든) 카드뉴스/쇼츠 슬라이드 텍스트 배열 (1번 COVER: 훅, 2번 BODY: BEFORE/AFTER 팩폭 비교, 3번 CTA: 디든 3초 무료 교정 제안 및 프로필 링크 유도)
-  `;
+    `;
 
     const responseSchema: Schema = {
         type: Type.OBJECT,
@@ -185,36 +172,66 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
         required: ['topic', 'thread_text', 'myti_thread_text', 'insta_caption', 'card_news_slides']
     };
 
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: [
-                {
-                    role: 'user',
-                    parts: [{ text: `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 Draft Ethan용 (인스타 캡션, 인스타 3슬라이드 카드뉴스, 스레드 문구) 및 MYTI 전용 스레드 포스팅 문구를 생성해 줘.
+    const userPrompt = `오늘의 홍보 주제: "${selectedTopic}". 이 주제로 Draft Ethan용 (인스타 캡션, 인스타 3슬라이드 카드뉴스, 스레드 문구) 및 MYTI 전용 스레드 포스팅 문구를 생성해 줘.
 
 🚨 [쇼츠/슬라이드 말투 및 대본 필수 원칙]
 1. card_news_slides의 모든 제목, 소제목, 내용 문장은 반드시 친한 친구에게 썰 풀듯 "~했거든?", "~인 거야", "~라고 하더라고", "~해봐!" 어미를 사용하는 100% 썰 스피치 반말 구어체로만 작성해야 해. 절대로 뉴스 기사체나 존댓말(~입니다, ~했습니다)을 쓰면 안 돼!
-2. ⭐ [음성 읽기(TTS) 호환 필수]: 영문 단어나 알파벳(Before, After, Diff, AI, URL 등)을 영문으로 넣으면 알파벳을 하나씩 철자대로 읽어 어색해지므로, 반드시 읽을 음성에 맞춰 "비포", "애프터", "에이아이", "드래프트 이든" 처럼 자연스러운 한글 표기로 작성해야 해!` }]
-                }
-            ],
-            config: {
-                systemInstruction,
-                responseMimeType: 'application/json',
-                responseSchema,
-                temperature: 0.7
-            }
+2. ⭐ [음성 읽기(TTS) 호환 필수]: 영문 단어나 알파벳(Before, After, Diff, AI, URL 등)을 영문으로 넣으면 알파벳을 하나씩 철자대로 읽어 어색해지므로, 반드시 읽을 음성에 맞춰 "비포", "애프터", "에이아이", "디든" 처럼 자연스러운 한글 표기로 작성해야 해!`;
+
+    try {
+        const data = await generateContentWithFallback<MarketingContentResponse>({
+            systemInstruction,
+            userPrompt,
+            responseMimeType: 'application/json',
+            responseSchema,
+            temperature: 0.7
         });
 
-        const responseText = response.text;
-        if (!responseText) {
-            throw new Error('Gemini API 응답이 비어있습니다.');
+        if (trendNews?.source) {
+            data.news_source = trendNews.source;
         }
 
-        const data: MarketingContentResponse = JSON.parse(responseText);
         return data;
-    } catch (error) {
-        console.error('Gemini API 콘텐츠 생성 오류:', error);
-        throw error;
+    } catch (error: any) {
+        console.warn('[ContentGenerator] ⚠️ 모든 AI 모델 호출 실패로 안전 오프라인 템플릿으로 자동 전환합니다:', error.message);
+        return getFallbackMarketingContent(selectedTopic);
     }
+}
+
+/**
+ * 모든 Gemini API가 일시 장애일 때 파이프라인 중단을 막아주는 고품질 룰 기반 백업 마케팅 콘텐츠
+ */
+function getFallbackMarketingContent(topic: string): MarketingContentResponse {
+    return {
+        topic: topic || '서류 탈락하는 자소서 vs 합격하는 자소서 차이',
+        thread_text: `자소서 서류 탈락하는 사람들의 공통점 딱 1가지 알려줌.\n\n"열심히 하겠습니다" 같은 추상적인 다짐만 적고, "전년 대비 전환율 24% 상승" 같은 구체적인 수치 성과가 없음..\n\n인사담당자는 10초 만에 훑어보는데 눈에 띄는 숫자가 없으면 바로 탈락 폴더행임!\n\n👉 지금 프로필 링크에 디든(dethan) 3초 무료 AI 자소서 팩폭 검수 링크 걸어둠! 댓글 남기면 1:1 무료 쿠폰 디엠으로 쏨!`,
+        myti_thread_text: `면접장만 가면 머릿속 하얘지는 '쫄보형 완벽주의자' 취준생들 특징 ㅋㅋㅋ\n\n1. 질문 예상 답변 100개 외워감\n2. 꼬리 질문 하나 나오면 동공 지진\n3. 끝나고 나오면서 이불킥 100번 함\n\n너 면접장 페르소나는 뭔지 1분 만에 검사해봐!\n👉 프로필 링크에서 MYTI 1분 30초 컷 취업 MBTI 무료 테스트 고고!`,
+        insta_caption: `🔥 서류 탈락하는 자소서 vs 대기업 합격 자소서의 결정적 차이! 📄✨\n\n추상적인 미사여구는 빼고, 3초 만에 인사담당자 시선을 사로잡는 수치 성과(STAR 기법)로 문장을 바꿔보세요.\n\n👉 지금 바로 프로필 링크(@draft_ethan)에서 3초 무료 AI 자소서 팩폭 검수(dethan 디든)를 받아보세요!\n💬 댓글로 '자소서' 남겨주시면 1:1 무료 검수 쿠폰을 보내드립니다.\n\n#자소서 #자소서첨삭 #디든 #취준생 #이직 #자기소개서 #취업준비 #면접팁 #합격자소서`,
+        card_news_slides: [
+            {
+                slideNumber: 1,
+                type: 'COVER',
+                title: '서류 탈락하는 자소서의 치명적 공통점',
+                subtitle: '인사담당자가 10초 만에 거르는 이유',
+                contentLines: ['너 자소서 아직도 "열정"만 적었어?', '인사담당자는 숫자 없는 자소서 바로 넘기거든!'],
+                highlightText: '서류 광탈 1순위 문장'
+            },
+            {
+                slideNumber: 2,
+                type: 'BODY',
+                title: '비포 vs 애프터 팩폭 비교',
+                subtitle: '추상적 다짐 ➔ 수치 성과 전환',
+                contentLines: ['비포: 최선을 다해 매출을 올렸습니다', '애프터: 프로모션 기획으로 전환율 24% 상승 달성'],
+                highlightText: 'STAR 수치화 공식'
+            },
+            {
+                slideNumber: 3,
+                type: 'CTA',
+                title: '디든(dethan) 3초 무료 AI 팩폭 검수',
+                subtitle: '프로필 링크에서 3초 만에 첨삭 완료',
+                contentLines: ['오탈자랑 문맥 교정까지 한번에!', 'Q. 너 자소서는 비포야 애프터야? 댓글 남겨봐!'],
+                highlightText: '3초 무료 교정'
+            }
+        ]
+    };
 }
