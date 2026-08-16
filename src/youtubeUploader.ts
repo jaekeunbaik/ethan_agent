@@ -53,16 +53,15 @@ export async function uploadToYouTubeShorts(params: YouTubeUploadParams): Promis
             finalTitle += ' #Shorts';
         }
 
-        const tags = params.tags || ['Shorts', '자소서', '취업', 'DraftEthan', 'AI교정'];
-
-        console.log(`[YouTubeUploader] 🎬 동영상 업로드 진행 중: "${finalTitle}"`);
+        const tags = params.tags || ['Shorts', '자소서', '취업', 'dethan', '디든', 'AI교정'];
+        console.log(`[YouTubeUploader] 🎬 업로드할 태그 (${tags.length}개):`, tags.join(', '));
 
         const response = await youtube.videos.insert({
             part: ['snippet', 'status'],
             requestBody: {
                 snippet: {
-                    title: finalTitle.substring(0, 100), // 최대 100자
-                    description: `${params.description}\n\n👉 Draft Ethan 무료 자소서 AI 팩폭 받으러 가기: https://draft-ethan.vercel.app/`,
+                    title: params.title.substring(0, 100),
+                    description: `${params.description}\n\n👉 dethan (디든) 무료 자소서 AI 팩폭 받으러 가기: https://draft-ethan.vercel.app/`,
                     tags: tags,
                     categoryId: '27', // Education (교육)
                     defaultLanguage: 'ko',

@@ -113,7 +113,7 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     ⚠️ 작성 지침 (가짜 뉴스 방지 및 사실 기반 보장):
     1. 지어낸 통계 수치나 가짜 뉴스, 할루시네이션(환각)은 절대 금지합니다! 뉴스에 명시된 사실과 채용 시장의 객관적 현실만을 바탕으로 작성하세요.
     2. 콘텐츠(스레드/인스타/카드뉴스)에 반드시 출처를 표기하세요 (예: "📰 출처: ${trendNews.source} 보도 / 실시간 뉴스 분석").
-    3. 이 뉴스가 취준생/이직러의 자소서 작성 및 면접 준비에 미치는 실질적인 영향을 팩폭 톤으로 전달하고, Draft Ethan과 MYTI로 해결책을 제안하세요.
+    3. 이 뉴스가 취준생/이직러의 자소서 작성 및 면접 준비에 미치는 실질적인 영향을 팩폭 톤으로 전달하고, dethan과 MYTI로 해결책을 제안하세요.
     ` : '';
 
     const targetToneId = toneId || process.env.SHORTS_TONE || 'STORY';
@@ -123,12 +123,12 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     const systemInstruction = `
     당신은 2030 취준생 및 이직러의 심리를 정확히 파고드는 B2C SNS 전문 마케터이자 "팩폭 메이트"입니다.
     당신은 두 가지 사이드 프로젝트를 운영하며 마케팅하고 있습니다:
-    1. Draft Ethan (AI 자소서 교정 및 평가 서비스 - ${draftEthanUrl})
+    1. dethan (디든 - AI 자소서 교정 및 평가 서비스 - ${draftEthanUrl})
     2. MYTI (내 안의 취업/이직 페르소나 테스트 - ${mytiUrl})
     ${newsContextInstruction}
 
-    [Draft Ethan 핵심 가치 (USP)]
-    - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시 (이든으로 발음)
+    [dethan (디든) 핵심 가치 (USP)]
+    - ⚡ 3초 만에 끝나는 문장 단위 (Diff) 1:1 교정 및 이유 명시 (디든으로 발음)
     - 📊 4대 역량 스코어링 (직무 적합성 / 가독성 / 논리성 / 구체성)
     - 💡 기업/직무 맞춤 톤앤매너 & 합격 소제목 추천
     - 🎁 무료 체험 제공
@@ -138,7 +138,7 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     - ⚡ 100% 무료, 회원가입/로그인 0초 컷, 12문항 1분 30초 완성
     - 🤖 16가지 직무 행동 패턴 기반의 면접장 팩폭 페르소나 도출
     - 💥 팩폭 특징 3가지 & 환상의/환장의 짝꿍 케미 분석
-    - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(Draft Ethan) 자연스러운 연결
+    - 🚀 테스트 완료 후 3초 무료 AI 자소서 팩폭 검수(dethan 디든) 자연스러운 연결
 
     [유튜브 쇼츠 3단계 카피라이팅 말투 원칙 (필수 준수)]
     - 선택된 컨셉: ${selectedTone.name}
@@ -147,13 +147,13 @@ export async function generateMarketingContent(toneId?: string): Promise<Marketi
     - 1문장은 10자 내외로 짧게 끊어서 빠르고 드라마틱한 호흡 유지!
     - 1. Hook (0~5초 / Cover Slide): 오프닝 인사 없이 바로 자극적인 핫이슈 훅!
     - 2. Body (5~22초 / Body Slide): 인사담당자 관점의 팩폭 비교 (BEFORE vs AFTER)
-    - 3. Call to Action (22~30초 / CTA Slide): Draft Ethan(이든) 3초 무료 교정 제안 + 댓글 유도 퀴즈 (예: "Q. 너 자소서는 1번(비포)이야 2번(애프터)이야? 댓글 남겨봐!")
+    - 3. Call to Action (22~30초 / CTA Slide): dethan (디든) 3초 무료 교정 제안 + 댓글 유도 퀴즈 (예: "Q. 너 자소서는 1번(비포)이야 2번(애프터)이야? 댓글 남겨봐!")
 
     [출력 요구사항]
-    1. thread_text: Draft Ethan 서비스 홍보용 스레드 포스팅 텍스트 (300자 내외, 공감+팩폭 톤, 실제 뉴스 출처 및 Draft Ethan URL: ${draftEthanUrl} 포함, 하단에 "댓글로 '자소서'라고 남겨주시면 무료 팩폭 검수 쿠폰 1:1 디엠으로 쏴드립니다!" 유도 문구 필수 포함)
-    2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, MYTI URL: ${mytiUrl} 포함, 댓글/저장/공유 유도)
-    3. insta_caption: Draft Ethan 카드뉴스용 인스타그램 캡션 (자극적 헤드라인 + 뉴스 팩폭/팁 + CTA + 해시태그 + "댓글로 '자소서' 남겨주시면 1:1 무료 검수 쿠폰 쏴드립니다!" 문구 필수 포함 + 뉴스 출처 표기)
-    4. card_news_slides: 정확히 3장의 Draft Ethan 카드뉴스/쇼츠 슬라이드 텍스트 배열 (1번 COVER: 훅, 2번 BODY: BEFORE/AFTER 팩폭 비교, 3번 CTA: 이든 3초 무료 교정 제안 및 프로필 링크 유도)
+    1. thread_text: dethan(디든) 서비스 홍보용 스레드 포스팅 텍스트 (250~350자, 100% 공감+팩폭 썰 톤, 링크는 본문에 직접 넣지 말고 하단에 "👉 3초 만에 AI 팩폭 교정받는 링크는 프로필 링크에 걸어뒀어! 댓글로 '자소서'라고 남겨주면 1:1 무료 쿠폰 디엠으로 쏨!" 형태로 자연스러운 댓글/프로필 유도)
+    2. myti_thread_text: MYTI 서비스 전용 스레드 포스팅 텍스트 (Threads 전용! 반말/친근/팩폭 톤, 2030 취준생/이직러 공감, 페르소나 특징/짝케미 언급, "👉 프로필 링크에서 1분 30초 컷 취업 MBTI 테스트 해봐!", 댓글/저장/공유 유도)
+    3. insta_caption: dethan(디든) 인스타그램 캡션 (호기심 유발 헤드라인 + 뉴스 팩폭/팁 + "👉 지금 바로 프로필 링크(@계정)에서 3초 무료 팩폭 검수 받아보세요!" + "💬 댓글로 '자소서' 남겨주시면 1:1 무료 검수 쿠폰 쏴드립니다!" + 인기 해시태그 10개 내외: #자소서 #자소서첨삭 #디든 #취준생 #이직 #자기소개서 #취업준비 #면접팁 #합격자소서)
+    4. card_news_slides: 정확히 3장의 dethan(디든) 카드뉴스/쇼츠 슬라이드 텍스트 배열 (1번 COVER: 훅, 2번 BODY: BEFORE/AFTER 팩폭 비교, 3번 CTA: 디든 3초 무료 교정 제안 및 프로필 링크 유도)
   `;
 
     const responseSchema: Schema = {

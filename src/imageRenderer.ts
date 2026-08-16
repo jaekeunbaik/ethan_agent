@@ -35,7 +35,7 @@ interface ColorTheme {
     itemColors: Array<{ bg: string; border: string; badge: string; text: string }>;
 }
 
-// Draft Ethan 브랜드 시그니처 테마: Royal Blue & Modern Electric Violet
+// dethan (디든) 브랜드 시그니처 테마: Royal Blue & Modern Electric Violet
 const THEMES: ColorTheme[] = [
     {
         grad1: '#2563EB', grad2: '#7C3AED', grad3: '#06B6D4',
@@ -143,13 +143,13 @@ function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSli
     ctx.fillRect(0, 0, CANVAS_SIZE, 14);
 
     // 브랜드 서비스 로고
-    ctx.font = `bold 24px ${FONT_FAMILY}`;
-    ctx.fillStyle = isDark ? '#FFFFFF' : COLORS.textDark;
+    ctx.font = `bold 28px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#0F172A';
     ctx.textAlign = 'left';
-    ctx.fillText('Draft Ethan', 60, 74);
+    ctx.fillText('dethan (디든)', 60, 74);
 
-    // AI 뱃지
-    const badgeX = 60 + ctx.measureText('Draft Ethan').width + 12;
+    // 상단 AI 자소서 배지
+    const badgeX = 60 + ctx.measureText('dethan (디든)').width + 12;
     roundRect(ctx, badgeX, 53, 44, 26, 8);
     const aiBg = ctx.createLinearGradient(badgeX, 0, badgeX + 44, 0);
     aiBg.addColorStop(0, '#2563EB');
@@ -280,7 +280,7 @@ function drawCoverSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     }
 
     // 하단 태그 (밝고 선명한 뱃지)
-    const tags = ['#자소서첨삭', '#AI교정', '#서류합격', '#DraftEthan'];
+    const tags = ['#자소서첨삭', '#AI교정', '#서류합격', '#dethan', '#디든'];
     let tagX = 60;
     const tagY = CANVAS_SIZE - 170;
     tags.forEach(tag => {
@@ -379,10 +379,10 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
         ctx.fillStyle = midGrad;
         ctx.shadowBlur = 0;
         ctx.fill();
-        ctx.font = `bold 20px ${FONT_FAMILY}`;
+        ctx.font = `bold 22px ${FONT_FAMILY}`;
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'center';
-        ctx.fillText('⚡ Draft Ethan AI 1:1 맞춤 교정', CANVAS_SIZE / 2, midY + 31);
+        ctx.fillText('⚡ dethan (디든) AI 1:1 맞춤 교정', CANVAS_SIZE / 2, midY + 31);
 
         // [After 카드 - 대기업 합격] (선명한 바이올렛/블루 톤)
         const afterY = 535;

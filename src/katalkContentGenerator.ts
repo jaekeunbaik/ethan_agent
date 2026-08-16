@@ -40,8 +40,8 @@ export async function generateKatalkScript(story: CommunityStory): Promise<Katal
     1. 대화 상대: "나"(취준생/직장인) vs "상대방"(꼰대 팀장님 / 까칠한 면접관 / 친한 친구)
     2. 메세지 개수: 정확히 4~6개의 톡 메세지로 구성하여 15~25초 숏폼 속도감 유지
     3. 말투: 100% 생생한 구어체, 짤막한 톡 어투 ("팀장님!", "응 왜?", "실수로 누나라고 보냄", "미쳤냐?")
-    4. 음성(TTS) 읽기 호환: 영문 알파벳(Before, After, AI, Diff 등) 금지! 한글 발음("비포", "애프터", "에이아이", "드래프트 이든")으로 표기
-    5. 마지막 ctaText: "Q. 너도 자소서 오탈자로 광탈할래? 3초 만에 Draft Ethan(드래프트 이든) 무료 교정받자!" 형태의 댓글 유도 퀴즈 문구 작성
+    4. 음성(TTS) 읽기 호환: 영문 알파벳(Before, After, AI, Diff 등) 금지! 한글 발음("비포", "애프터", "에이아이", "디든")으로 표기
+    5. 마지막 ctaText: "Q. 너도 자소서 오탈자로 광탈할래? 3초 만에 디든(dethan) 무료 교정받자!" 형태의 댓글 유도 퀴즈 문구 작성
     `;
 
     const responseSchema: Schema = {

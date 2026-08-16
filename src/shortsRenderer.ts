@@ -94,12 +94,13 @@ function drawBottomSubtitle(ctx: CanvasRenderingContext2D, subtitleText: string)
     const cleanStr = stripEmojis(subtitleText);
     if (!cleanStr) return;
 
-    ctx.font = `bold 48px ${FONT_FAMILY}`;
-    const textW = ctx.measureText(cleanStr).width + 60;
-    const boxW = Math.min(textW, WIDTH - 100);
-    const boxH = 90;
-    const boxX = (WIDTH - boxW) / 2;
-    const boxY = HEIGHT - 240;
+    ctx.font = `bold 42px ${FONT_FAMILY}`;
+    const lines = wrapText(ctx, cleanStr, WIDTH - 140);
+    const lineH = 50;
+    const boxH = Math.max(90, lines.length * lineH + 30);
+    const boxW = WIDTH - 100;
+    const boxX = 50;
+    const boxY = HEIGHT - 250;
 
     // 형광 노란색 자막 배너 (#FFE800)
     roundRect(ctx, boxX, boxY, boxW, boxH, 20);
@@ -109,10 +110,12 @@ function drawBottomSubtitle(ctx: CanvasRenderingContext2D, subtitleText: string)
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    ctx.font = `bold 44px ${FONT_FAMILY}`;
+    ctx.font = `bold 40px ${FONT_FAMILY}`;
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
-    ctx.fillText(cleanStr.substring(0, 30), WIDTH / 2, boxY + 60);
+    for (let l = 0; l < lines.length; l++) {
+        ctx.fillText(lines[l], WIDTH / 2, boxY + 30 + (l + 0.75) * lineH);
+    }
 }
 
 // ─── 1. 커버 슬라이드 (Cover Slide) ──────────────────────────────────────────
@@ -253,7 +256,7 @@ function renderShortsBody(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
         ctx.font = `bold 30px ${FONT_FAMILY}`;
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'center';
-        ctx.fillText('Draft Ethan AI 1:1 맞춤 교정', WIDTH / 2, midY + 41);
+        ctx.fillText('dethan (디든) AI 1:1 맞춤 교정', WIDTH / 2, midY + 41);
 
         // 3) AFTER 카드 (동적 높이 & 대형 48px 폰트)
         ctx.font = `bold 48px ${FONT_FAMILY}`;
@@ -363,7 +366,7 @@ function renderShortsCta(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
 
     ctx.font = `bold 38px ${FONT_FAMILY}`;
     ctx.fillStyle = '#2563EB';
-    ctx.fillText('draft-ethan.vercel.app', WIDTH / 2, cardY + cardH - 50);
+    ctx.fillText('dethan.co.kr (디든)', WIDTH / 2, cardY + cardH - 50);
 
     drawBottomSubtitle(ctx, '프로필 링크 클릭시 100% 무료 교정!');
 }
@@ -398,11 +401,18 @@ export async function generateShortsSlideImages(
 async function generateTTSAudioForText(text: string, outputPath: string): Promise<string> {
     try {
         let cleanText = text
+            .replace(/디든\s*\([^\)]*\)/gi, '디든')
+            .replace(/\([Dd]ethan\)/gi, '')
+            .replace(/\(디든\)/gi, '')
+            .replace(/\([a-zA-Z0-9\s_.-]+\)/g, '')
             .replace(/BEFORE/gi, '비포')
             .replace(/AFTER/gi, '애프터')
-            .replace(/Draft\s*Ethan/gi, '드래프트 이든')
-            .replace(/Ethan/gi, '이든')
-            .replace(/에단/g, '이든')
+            .replace(/Draft\s*Ethan/gi, '디든')
+            .replace(/드래프트\s*이든/gi, '디든')
+            .replace(/드래프트\s*에단/gi, '디든')
+            .replace(/dethan/gi, '디든')
+            .replace(/Ethan/gi, '디든')
+            .replace(/에단/g, '디든')
             .replace(/Diff/gi, '디프')
             .replace(/ROAS/gi, '로아스')
             .replace(/AI/gi, '에이아이')
@@ -415,7 +425,8 @@ async function generateTTSAudioForText(text: string, outputPath: string): Promis
             .replace(/FREE/gi, '프리')
             .replace(/TRIAL/gi, '트라이얼')
             .replace(/https?:\/\/[^\s]+/gi, '프로필 링크 사이트')
-            .replace(/draft-ethan\.vercel\.app/gi, '드래프트 이든 사이트')
+            .replace(/draft-ethan\.vercel\.app/gi, '디든 사이트')
+            .replace(/dethan\.co\.kr/gi, '디든 사이트')
             .replace(/출처:.*$/gm, '')
             .trim();
 
@@ -425,7 +436,7 @@ async function generateTTSAudioForText(text: string, outputPath: string): Promis
         const voice = process.env.SHORTS_VOICE || candidateVoices[Math.floor(Math.random() * candidateVoices.length)];
         try {
             const { execSync } = require('child_process');
-            execSync(`python -m edge_tts --voice ${voice} --rate=+20% --text ${JSON.stringify(cleanText)} --write-media ${JSON.stringify(outputPath)}`);
+            execSync(`python -m edge_tts --voice ${voice} --rate=+32% --text ${JSON.stringify(cleanText)} --write-media ${JSON.stringify(outputPath)}`, { stdio: 'pipe' });
             if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
                 console.log(`[ShortsRenderer] 🎙️ 고품질 신경망 성우(${voice}) 음성 생성 완료!`);
                 return outputPath;
@@ -434,6 +445,7 @@ async function generateTTSAudioForText(text: string, outputPath: string): Promis
             console.warn('[ShortsRenderer] ⚠️ Edge TTS 실행 실패, 구글 기본 TTS로 폴백:', edgeErr.message);
         }
 
+        const rawGooglePath = outputPath.replace(/\.mp3$/, '_raw.mp3');
         const chunks: string[] = [];
         let remaining = cleanText;
         while (remaining.length > 0) {
@@ -511,12 +523,14 @@ export async function createShortsVideo(
         let speechText = `${cleanTitle}. ${cleanSubtitle}. `;
         readContentLines.forEach(l => speechText += `${l}. `);
 
-        // 2) 'Ethan' / 'ETHAN' / '에단' 발음을 모두 확실하게 '[이든]'으로 변환
+        // 2) 'dethan' / '디든' / 'Draft Ethan' / '에단' 발음을 모두 확실하게 '[디든]'으로 변환
         speechText = speechText
-            .replace(/Draft\s*Ethan/gi, '드래프트 이든')
-            .replace(/드래프트\s*에단/gi, '드래프트 이든')
-            .replace(/Ethan/gi, '이든')
-            .replace(/에단/gi, '이든');
+            .replace(/Draft\s*Ethan/gi, '디든')
+            .replace(/드래프트\s*이든/gi, '디든')
+            .replace(/드래프트\s*에단/gi, '디든')
+            .replace(/dethan/gi, '디든')
+            .replace(/Ethan/gi, '디든')
+            .replace(/에단/gi, '디든');
 
         const aPath = path.join(outputDir, `tts_slide_${i + 1}.mp3`);
         await generateTTSAudioForText(speechText, aPath);

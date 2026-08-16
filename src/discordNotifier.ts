@@ -19,6 +19,12 @@ export interface MarketingNotificationPayload {
  * 디스코드 웹훅(draft_secretary)으로 마케팅 자동화 포스팅 결과 리포트 전송
  */
 export async function sendDiscordReport(payload: MarketingNotificationPayload): Promise<void> {
+    // 성공 시에는 디스코드 알림을 건너뛰고, 오직 업로드 실패/오류 발생 시에만 알림 발송
+    if (payload.status === 'SUCCESS') {
+        console.log('✨ [draft_secretary] 마케팅 자동화 성공 완료! (성공 시 디스코드 알림 생략, 실패 시에만 발송)');
+        return;
+    }
+
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (!webhookUrl) {
         console.warn('⚠️ DISCORD_WEBHOOK_URL이 .env에 설정되어 있지 않습니다.');
@@ -26,13 +32,10 @@ export async function sendDiscordReport(payload: MarketingNotificationPayload): 
     }
 
     try {
-        console.log('🤖 [draft_secretary] 디스코드로 마케팅 보고서 전송 중...');
+        console.log('🚨 [draft_secretary] 마케팅 자동화 실패/경고 감지 -> 디스코드로 실패 알림 전송 중...');
 
-        const statusColor = payload.status === 'SUCCESS' 
-            ? 0x00FF88 // 초록색
-            : (payload.status === 'PARTIAL_SUCCESS' ? 0xFFB900 : 0xFF0055); // 주황색 / 빨간색
-
-        const statusEmoji = payload.status === 'SUCCESS' ? '🎉 성공' : (payload.status === 'PARTIAL_SUCCESS' ? '⚠️ 일부 성공' : '❌ 실패');
+        const statusColor = 0xFF0055; // 실패/에러 빨간색
+        const statusEmoji = payload.status === 'PARTIAL_SUCCESS' ? '⚠️ 일부 업로드 실패' : '❌ 전체 업로드 실패';
 
         const fields = [
             {
@@ -41,7 +44,7 @@ export async function sendDiscordReport(payload: MarketingNotificationPayload): 
                 inline: false
             },
             {
-                name: '💬 Draft Ethan Threads',
+                name: '💬 dethan (디든) Threads',
                 value: payload.threadsPostId !== undefined 
                     ? (payload.threadsPostId ? `✅ 업로드 완료 (\`ID: ${payload.threadsPostId}\`)` : '❌ 업로드 실패')
                     : '➖ 선택 실행 대상 제외',

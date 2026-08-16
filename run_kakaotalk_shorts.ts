@@ -29,7 +29,7 @@ async function runKatalkShortsPipeline() {
             videoPath,
             title: `[카톡썰] ${script.title}`,
             description: script.instaCaption,
-            tags: ['Shorts', '카톡썰', '자소서', 'DraftEthan', '취업']
+            tags: ['Shorts', '카톡썰', '자소서', 'dethan', '디든', '취업']
         });
         if (ytResult.success && ytResult.videoUrl) {
             youtubeUrl = ytResult.videoUrl;
@@ -67,6 +67,11 @@ async function runKatalkShortsPipeline() {
         console.log('=================================================================');
     } catch (err: any) {
         console.error('❌ [KatalkShorts] 파이프라인 실행 중 오류 발생:', err);
+        await sendDiscordReport({
+            topic: '카카오톡 썰 쇼츠 자동화 파이프라인',
+            status: 'FAILED',
+            errorMessage: err.message || String(err)
+        });
     }
 }
 
