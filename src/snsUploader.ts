@@ -94,7 +94,7 @@ async function waitForInstagramContainerReady(containerId: string, accessToken: 
 }
 
 /**
- * 1. Threads API: 스레드 숏폼 포스팅 자동 게시 (재시도 로직 포함)
+ * 1. Threads API: 스레드 숏폼 포스팅 자동 게시 (재시도 로직 및 POST Body 안전 전송 포함)
  */
 export async function postToThreads(threadText: string): Promise<string> {
     const threadsUserId = process.env.THREADS_USER_ID;
@@ -104,6 +104,13 @@ export async function postToThreads(threadText: string): Promise<string> {
         throw new Error('THREADS_USER_ID 또는 THREADS_ACCESS_TOKEN이 설정되지 않았습니다.');
     }
 
+    // Threads 공식 글자 수 제한 (500자) 안전 가드
+    let sanitizedText = threadText.trim();
+    if (sanitizedText.length > 500) {
+        console.warn(`[Threads] ⚠️ 본문 길이(${sanitizedText.length}자)가 500자를 초과하여 497자로 안전하게 자릅니다.`);
+        sanitizedText = sanitizedText.slice(0, 497) + '...';
+    }
+
     let lastError: any = null;
     const maxAttempts = 3;
 
@@ -111,13 +118,16 @@ export async function postToThreads(threadText: string): Promise<string> {
         try {
             console.log(`[Threads] 스레드 포스팅 컨테이너 생성 중... (시도 ${attempt}/${maxAttempts})`);
 
-            // Step 1: Create Threads Media Container
+            // Step 1: Create Threads Media Container (HTTP POST Body 방식 - URL 길이 및 인코딩 500 에러 방지)
             const createContainerUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads`;
-            const containerRes = await axios.post(createContainerUrl, null, {
-                params: {
-                    media_type: 'TEXT',
-                    text: threadText,
-                    access_token: accessToken
+            const containerForm = new URLSearchParams();
+            containerForm.append('media_type', 'TEXT');
+            containerForm.append('text', sanitizedText);
+            containerForm.append('access_token', accessToken);
+
+            const containerRes = await axios.post(createContainerUrl, containerForm, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
@@ -131,12 +141,15 @@ export async function postToThreads(threadText: string): Promise<string> {
             // 미디어 컨테이너 준공 상태 폴링 확인
             await waitForThreadsContainerReady(creationId, accessToken);
 
-            // Step 2: Publish Threads Container
+            // Step 2: Publish Threads Container (HTTP POST Body)
             const publishUrl = `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`;
-            const publishRes = await axios.post(publishUrl, null, {
-                params: {
-                    creation_id: creationId,
-                    access_token: accessToken
+            const publishForm = new URLSearchParams();
+            publishForm.append('creation_id', creationId);
+            publishForm.append('access_token', accessToken);
+
+            const publishRes = await axios.post(publishUrl, publishForm, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
@@ -150,9 +163,13 @@ export async function postToThreads(threadText: string): Promise<string> {
         } catch (err: any) {
             lastError = err;
             console.warn(`⚠️ [Threads] 시도 ${attempt} 실패:`, err.message || err);
+            if (err.response?.data) {
+                console.error(`   [Threads 상세 에러 데이터]:`, JSON.stringify(err.response.data));
+            }
             if (attempt < maxAttempts) {
-                console.log(`[Threads] 5초 후 재시도합니다...`);
-                await new Promise((res) => setTimeout(res, 5000));
+                const retryDelay = attempt * 5000;
+                console.log(`[Threads] ${retryDelay / 1000}초 후 재시도합니다...`);
+                await new Promise((res) => setTimeout(res, retryDelay));
             }
         }
     }
