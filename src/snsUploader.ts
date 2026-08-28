@@ -179,6 +179,7 @@ export async function postToThreads(threadText: string): Promise<string> {
 
 /**
  * 2. Instagram Graph API: 카드뉴스 이미지 퍼블릭 URL 배열 및 캡션을 캐러셀(슬라이드) 게시물로 포스팅
+ * - Form-Urlencoded 안전 바디 전송 및 최대 3회 자동 재시도 내장
  */
 export async function postCarouselToInstagram(
     imagePublicUrls: string[],
@@ -200,67 +201,97 @@ export async function postCarouselToInstagram(
     const apiBase = isInstagramLogin ? 'https://graph.instagram.com/v21.0' : 'https://graph.facebook.com/v21.0';
     const accessToken = isInstagramLogin ? userAccessToken : await getEffectiveAccessToken(instagramAccountId, userAccessToken);
 
-    console.log(`[Instagram] 총 ${imagePublicUrls.length}장의 개별 아이템 컨테이너 생성 및 처리 확인 중...`);
+    const maxAttempts = 3;
+    let lastError: any = null;
 
-    // Step 1: Create Item Containers for each image URL & wait for readiness
-    const itemContainerIds: string[] = [];
-    for (let i = 0; i < imagePublicUrls.length; i++) {
-        const imageUrl = imagePublicUrls[i];
-        const itemUrl = `${apiBase}/${instagramAccountId}/media`;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            console.log(`[Instagram] 총 ${imagePublicUrls.length}장의 개별 아이템 컨테이너 생성 시작 (시도 ${attempt}/${maxAttempts})...`);
 
-        const itemRes = await axios.post(itemUrl, null, {
-            params: {
-                image_url: imageUrl,
-                is_carousel_item: true,
-                access_token: accessToken
+            // Step 1: Create Item Containers for each image URL & wait for readiness
+            const itemContainerIds: string[] = [];
+            for (let i = 0; i < imagePublicUrls.length; i++) {
+                const imageUrl = imagePublicUrls[i];
+                const itemUrl = `${apiBase}/${instagramAccountId}/media`;
+
+                const itemForm = new URLSearchParams();
+                itemForm.append('image_url', imageUrl);
+                itemForm.append('is_carousel_item', 'true');
+                itemForm.append('access_token', accessToken);
+
+                const itemRes = await axios.post(itemUrl, itemForm.toString(), {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                const itemId = itemRes.data?.id;
+                if (!itemId) {
+                    throw new Error(`인스타그램 슬라이드 ${i + 1} 컨테이너 생성 실패: ${JSON.stringify(itemRes.data)}`);
+                }
+
+                console.log(`[Instagram] 슬라이드 ${i + 1} 아이템 컨테이너 생성 (ID: ${itemId}). 처리 상태 확인 중...`);
+                await waitForInstagramContainerReady(itemId, accessToken, apiBase);
+                itemContainerIds.push(itemId);
             }
-        });
 
-        const itemId = itemRes.data?.id;
-        if (!itemId) {
-            throw new Error(`인스타그램 아이템 ${i + 1} 슬라이드 컨테이너 생성 실패: ${JSON.stringify(itemRes.data)}`);
+            // Step 2: Create Carousel Parent Container
+            console.log('[Instagram] 캐러셀 부모 컨테이너 생성 중 (children + caption)...');
+            const carouselUrl = `${apiBase}/${instagramAccountId}/media`;
+            const carouselForm = new URLSearchParams();
+            carouselForm.append('media_type', 'CAROUSEL');
+            carouselForm.append('children', itemContainerIds.join(','));
+            carouselForm.append('caption', instaCaption);
+            carouselForm.append('access_token', accessToken);
+
+            const carouselRes = await axios.post(carouselUrl, carouselForm.toString(), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            const carouselContainerId = carouselRes.data?.id;
+            if (!carouselContainerId) {
+                throw new Error(`인스타그램 캐러셀 컨테이너 생성 실패: ${JSON.stringify(carouselRes.data)}`);
+            }
+
+            console.log(`[Instagram] 캐러셀 부모 컨테이너 생성 완료 (ID: ${carouselContainerId}). 게재 준비 확인 중...`);
+            await waitForInstagramContainerReady(carouselContainerId, accessToken, apiBase);
+
+            // Step 3: Publish Carousel Container
+            console.log('[Instagram] 캐러셀 게시물 최종 게시(Publish) 진행 중...');
+            const publishUrl = `${apiBase}/${instagramAccountId}/media_publish`;
+            const publishForm = new URLSearchParams();
+            publishForm.append('creation_id', carouselContainerId);
+            publishForm.append('access_token', accessToken);
+
+            const publishRes = await axios.post(publishUrl, publishForm.toString(), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            const instagramPostId = publishRes.data?.id;
+            if (!instagramPostId) {
+                throw new Error(`인스타그램 게시물 최종 게재 실패: ${JSON.stringify(publishRes.data)}`);
+            }
+
+            console.log(`[Instagram] 🎉 인스타그램 캐러셀 포스팅 게시 성공! (Post ID: ${instagramPostId})`);
+            return instagramPostId;
+
+        } catch (err: any) {
+            lastError = err;
+            console.warn(`⚠️ [Instagram] 시도 ${attempt} 실패:`, err.message || err);
+            if (err.response?.data) {
+                console.error(`   [Instagram 상세 에러 응답]:`, JSON.stringify(err.response.data, null, 2));
+            }
+            if (attempt < maxAttempts) {
+                const retryDelay = attempt * 6000;
+                console.log(`[Instagram] ${retryDelay / 1000}초 후 재시도합니다...`);
+                await new Promise((res) => setTimeout(res, retryDelay));
+            }
         }
-
-        console.log(`[Instagram] 슬라이드 ${i + 1} 아이템 컨테이너 생성 (ID: ${itemId}). 처리 상태 확인 중...`);
-        await waitForInstagramContainerReady(itemId, accessToken, apiBase);
-        itemContainerIds.push(itemId);
     }
 
-    // Step 2: Create Carousel Parent Container
-    console.log('[Instagram] 캐러셀 부모 컨테이너 생성 중...');
-    const carouselUrl = `${apiBase}/${instagramAccountId}/media`;
-    const carouselRes = await axios.post(carouselUrl, null, {
-        params: {
-            media_type: 'CAROUSEL',
-            children: JSON.stringify(itemContainerIds),
-            caption: instaCaption,
-            access_token: accessToken
-        }
-    });
-
-    const carouselContainerId = carouselRes.data?.id;
-    if (!carouselContainerId) {
-        throw new Error(`인스타그램 캐러셀 컨테이너 생성 실패: ${JSON.stringify(carouselRes.data)}`);
-    }
-
-    console.log(`[Instagram] 캐러셀 부모 컨테이너 생성 완료 (ID: ${carouselContainerId}). 게재 준비 확인 중...`);
-    await waitForInstagramContainerReady(carouselContainerId, accessToken, apiBase);
-
-    // Step 3: Publish Carousel Container
-    console.log('[Instagram] 캐러셀 게시물 최종 게시(Publish) 진행 중...');
-    const publishUrl = `${apiBase}/${instagramAccountId}/media_publish`;
-    const publishRes = await axios.post(publishUrl, null, {
-        params: {
-            creation_id: carouselContainerId,
-            access_token: accessToken
-        }
-    });
-
-    const instagramPostId = publishRes.data?.id;
-    if (!instagramPostId) {
-        throw new Error(`인스타그램 게시물 최종 게재 실패: ${JSON.stringify(publishRes.data)}`);
-    }
-
-    console.log(`[Instagram] 인스타그램 캐러셀 포스팅 게시 성공! (Post ID: ${instagramPostId})`);
-    return instagramPostId;
+    throw lastError || new Error('Instagram 캐러셀 게시 중 오류가 발생했습니다.');
 }
