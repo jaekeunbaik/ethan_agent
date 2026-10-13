@@ -157,26 +157,31 @@ function drawCandleSummaryVisual(ctx: CanvasRenderingContext2D, scene: AlphaShor
     ctx.fillStyle = '#94A3B8';
     ctx.fillText(scene.subtitle, WIDTH / 2, ty + 10);
 
-    // 중앙 메인 대형 수치 박스 (네온 하이라이트)
+    // 중앙 메인 대형 수치 박스 (네온 하이라이트 + 글로우 효과)
     const statBoxY = ty + 70;
-    const statColor = scene.highlightStat.isPositive ? '#EF4444' : '#3B82F6'; // 국장 기준: 상승=빨강, 하락=파랑
+    const statColor = scene.highlightStat.isPositive ? '#EF4444' : '#38BDF8'; // 국장 기준: 상승=빨강, 하락=스카이블루
+
+    ctx.save();
+    ctx.shadowColor = statColor;
+    ctx.shadowBlur = 25;
     roundRect(ctx, 110, statBoxY, WIDTH - 220, 220, 28);
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.8)';
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
     ctx.fill();
     ctx.strokeStyle = statColor;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.stroke();
+    ctx.restore();
 
     ctx.font = `600 32px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#64748B';
+    ctx.fillStyle = '#94A3B8';
     ctx.fillText(scene.highlightStat.label, WIDTH / 2, statBoxY + 60);
 
-    ctx.font = `bold 82px ${FONT_FAMILY}`;
+    ctx.font = `bold 84px ${FONT_FAMILY}`;
     ctx.fillStyle = statColor;
     ctx.fillText(scene.highlightStat.value, WIDTH / 2, statBoxY + 145);
 
     if (scene.highlightStat.subValue) {
-        ctx.font = `bold 38px ${FONT_FAMILY}`;
+        ctx.font = `bold 40px ${FONT_FAMILY}`;
         ctx.fillStyle = statColor;
         ctx.fillText(scene.highlightStat.subValue, WIDTH / 2, statBoxY + 195);
     }
