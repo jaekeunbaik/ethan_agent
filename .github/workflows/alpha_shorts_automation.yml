@@ -25,7 +25,7 @@ jobs:
     - name: Install Korean Fonts, FFmpeg and Python Edge TTS
       run: |
         sudo apt-get update && sudo apt-get install -y ffmpeg fonts-nanum fonts-noto-cjk python3-pip
-        python3 -m pip install edge-tts
+        python3 -m pip install --break-system-packages edge-tts || python3 -m pip install edge-tts || true
 
     - name: Install dependencies
       run: npm ci
