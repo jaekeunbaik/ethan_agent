@@ -511,10 +511,10 @@ export async function generateEdgeTtsAudio(text: string, outputMp3Path: string):
         const rawMp3 = outputMp3Path + '.raw.mp3';
         fs.writeFileSync(rawMp3, Buffer.from(res.data));
 
-        // ffmpeg로 1.25배속 고속 변환
+        // ffmpeg로 1.45배속 초고속 딕션 변환 (쇼츠 최적화)
         await new Promise<void>((resFfmpeg, rejFfmpeg) => {
             ffmpeg(rawMp3)
-                .audioFilters('atempo=1.25')
+                .audioFilters('atempo=1.45')
                 .save(outputMp3Path)
                 .on('end', () => {
                     try { fs.unlinkSync(rawMp3); } catch {}
