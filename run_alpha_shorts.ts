@@ -76,7 +76,14 @@ async function main() {
         console.warn(`⚠️ 유튜브 업로드 단계 건너뜀: ${ytErr.message}`);
     }
 
-    // 5단계: 디스코드로 성공 보고서 즉시 전송
+    // 5단계: 실시간 채널 성과 조회 후 단 1회의 디스코드 알림으로 통합 전송
+    console.log('\n📊 [5/5] 유튜브 채널 지표 분석 및 통합 알림 전송 중...');
+    let channelMetrics = null;
+    try {
+        const { trackChannelPerformance } = await import('./src/channelPerformanceMonitor');
+        channelMetrics = await trackChannelPerformance();
+    } catch {}
+
     try {
         const { sendAlphaShortsDiscordAlert } = await import('./src/discordNotifier');
         await sendAlphaShortsDiscordAlert({
@@ -84,22 +91,15 @@ async function main() {
             videoName: path.basename(finalVideo),
             youtubeStatus: youtubeStatusText,
             marketSummary: `• KOSPI: ${marketData.kospi.price} (${marketData.kospi.changeRate}%)\n• 환율: ${marketData.usdKrw.price}원\n• 핵심: ${marketData.marketSummaryHeadline}`,
-            tags: content.tags
+            tags: content.tags,
+            metrics: channelMetrics ? {
+                subscriberCount: channelMetrics.subscriberCount,
+                totalViews: channelMetrics.totalViews,
+                totalVideos: channelMetrics.totalVideos
+            } : null
         });
     } catch (e: any) {
         console.warn('⚠️ 디스코드 알림 전송 오류:', e.message);
-    }
-
-    // 6단계: 실시간 채널 성과 및 조회수 모니터링
-    console.log('\n📊 [6/6] 유튜브 채널 성과 및 조회수 모니터링 분석 중...');
-    try {
-        const { trackChannelPerformance, sendPerformanceReportDiscord } = await import('./src/channelPerformanceMonitor');
-        const metrics = await trackChannelPerformance();
-        if (metrics) {
-            await sendPerformanceReportDiscord(metrics);
-        }
-    } catch (metricErr: any) {
-        console.warn('⚠️ 채널 모니터링 단계 경고:', metricErr.message);
     }
 }
 

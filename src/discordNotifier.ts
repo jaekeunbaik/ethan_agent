@@ -119,6 +119,11 @@ export async function sendAlphaShortsDiscordAlert(data: {
     youtubeStatus: string;
     marketSummary: string;
     tags: string[];
+    metrics?: {
+        subscriberCount: number;
+        totalViews: number;
+        totalVideos: number;
+    } | null;
 }): Promise<void> {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (!webhookUrl) {
@@ -127,41 +132,52 @@ export async function sendAlphaShortsDiscordAlert(data: {
     }
 
     try {
+        const fields: any[] = [
+            {
+                name: '📌 영상 주제',
+                value: `**${data.topic}**`,
+                inline: false
+            },
+            {
+                name: '📊 당일 시장 팩트 요약',
+                value: data.marketSummary,
+                inline: false
+            },
+            {
+                name: '📁 완성된 비디오',
+                value: `\`${data.videoName}\``,
+                inline: true
+            },
+            {
+                name: '📺 유튜브 업로드 상태',
+                value: data.youtubeStatus,
+                inline: true
+            }
+        ];
+
+        if (data.metrics) {
+            fields.push({
+                name: '📈 실시간 채널 현황',
+                value: `• 구독자: **${data.metrics.subscriberCount.toLocaleString()}명**\n• 누적 조회수: **${data.metrics.totalViews.toLocaleString()}회**\n• 총 영상: **${data.metrics.totalVideos}개**`,
+                inline: false
+            });
+        }
+
+        fields.push({
+            name: '🏷️ 추천 태그',
+            value: data.tags.join(', '),
+            inline: false
+        });
+
         const body = {
-            username: 'AlphaShorts Bot',
+            username: 'AlphaShorts Manager',
             avatar_url: 'https://cdn-icons-png.flaticon.com/512/2953/2953363.png',
             embeds: [
                 {
-                    title: `🎬 [AlphaShorts] 고화질 금융 쇼츠 팩토리 가동 완료!`,
-                    description: `Ethan님! 오늘의 장마감 팩트 기반 유튜브 쇼츠 영상이 성공적으로 렌더링되었습니다.`,
+                    title: `🎬 [AlphaShorts] 유튜브 쇼츠 자동 업로드 & 채널 리포트`,
+                    description: `Ethan님! 오늘의 장마감 금융 쇼츠가 유튜브 채널에 성공적으로 게시되었습니다.`,
                     color: 0x10B981, // 산뜻한 에메랄드 그린
-                    fields: [
-                        {
-                            name: '📌 영상 주제',
-                            value: `**${data.topic}**`,
-                            inline: false
-                        },
-                        {
-                            name: '📊 당일 시장 팩트 요약',
-                            value: data.marketSummary,
-                            inline: false
-                        },
-                        {
-                            name: '📁 완성된 비디오 파일',
-                            value: `\`${data.videoName}\``,
-                            inline: true
-                        },
-                        {
-                            name: '📺 유튜브 상태',
-                            value: data.youtubeStatus,
-                            inline: true
-                        },
-                        {
-                            name: '🏷️ 추천 태그',
-                            value: data.tags.join(', '),
-                            inline: false
-                        }
-                    ],
+                    fields: fields,
                     footer: {
                         text: `AlphaShorts Autonomous Engine • ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
                     }
@@ -170,7 +186,7 @@ export async function sendAlphaShortsDiscordAlert(data: {
         };
 
         await axios.post(webhookUrl, body);
-        console.log('📢 [AlphaShorts] 디스코드 완료 알림 발송 성공!');
+        console.log('📢 [AlphaShorts] 단일 통합 디스코드 알림 발송 성공!');
     } catch (err: any) {
         console.error('❌ [AlphaShorts] 디스코드 알림 발송 실패:', err.message || err);
     }
