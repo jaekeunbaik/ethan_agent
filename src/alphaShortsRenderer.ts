@@ -492,17 +492,25 @@ export function renderSceneFrame(scene: AlphaShortsScene, outputPath: string) {
 // ─── Edge-TTS 오디오 생성 ──────────────────────────────────────────────────
 
 export async function generateEdgeTtsAudio(text: string, outputMp3Path: string): Promise<number> {
-    const voice = 'ko-KR-InJoonNeural'; // 신뢰감 있는 남성 경제 아나운서 보이스
     const cleanText = text.replace(/["\n\r]/g, ' ').trim();
 
-    const command = `npx edge-tts --voice ${voice} --rate=+5% --text "${cleanText}" --write-media "${outputMp3Path}"`;
-    await execAsync(command);
+    try {
+        const { ttsSave } = await import('edge-tts');
+        await ttsSave(cleanText, outputMp3Path, { voice: 'ko-KR-InJoonNeural', rate: '+5%' });
+    } catch (err: any) {
+        console.warn('⚠️ edge-tts ttsSave 실패, 구글 TTS 폴백 시도:', err.message);
+        const { getAudioUrl } = await import('google-tts-api');
+        const axios = (await import('axios')).default;
+        const url = getAudioUrl(cleanText, { lang: 'ko', slow: false });
+        const res = await axios.get(url, { responseType: 'arraybuffer' });
+        fs.writeFileSync(outputMp3Path, Buffer.from(res.data));
+    }
 
     // 오디오 길이(초) 추출 via ffprobe
     return new Promise((resolve) => {
         ffmpeg.ffprobe(outputMp3Path, (err, metadata) => {
             if (err || !metadata?.format?.duration) {
-                resolve(8); // fallback: 8초
+                resolve(7); // fallback: 7초
             } else {
                 resolve(metadata.format.duration);
             }

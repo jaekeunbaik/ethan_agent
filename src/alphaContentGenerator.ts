@@ -61,14 +61,18 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
 `;
 
     try {
-        const responseText = await generateContentWithFallback<string>({
+        const responseData = await generateContentWithFallback<any>({
             systemInstruction: systemPrompt,
             userPrompt: userPrompt,
             responseMimeType: 'application/json',
             temperature: 0.3
         });
 
-        // JSON 파싱
+        if (typeof responseData === 'object' && responseData.scenes) {
+            return responseData as AlphaShortsContent;
+        }
+
+        const responseText = String(responseData);
         const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleaned);
 
