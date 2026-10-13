@@ -1,5 +1,6 @@
 import { generateContentWithFallback } from './geminiHelper';
 import { MarketSummaryData } from './financeDataFetcher';
+import { getLatestInsights } from './trendAndPerformanceAnalyzer';
 
 export interface AlphaShortsScene {
     sceneIndex: number;
@@ -51,6 +52,18 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
 [말투] 1.45배속 초고속 딕션에 맞춘 타격감 있는 팩폭 구어체 (~했거든요!, ~한 겁니다!, ~때문이죠!).
 `;
 
+    const latestInsights = getLatestInsights();
+    let trendPromptAddition = '';
+    if (latestInsights) {
+        trendPromptAddition = `
+[🚨 전일 시청률 진단 & 실시간 급상승 트렌드 피드백 (반드시 대본과 제목에 반영할 것)]
+- 시청률 진단 피드백: ${latestInsights.audienceRetentionDiagnosis}
+- 현재 유튜브 급상승 유행 키워드: ${latestInsights.trendingKeywords.join(', ')}
+- 쇼츠 바이럴 문법 트렌드: ${latestInsights.viralFormatTrends}
+- 킬러 액션 플랜: ${latestInsights.nextVideoStrategy}
+`;
+    }
+
     const userPrompt = `
 [오늘의 실제 시장 팩트 데이터]
 - 날짜: ${marketData.date}
@@ -60,7 +73,7 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
 - 원·달러 환율: ${marketData.usdKrw.price.toLocaleString()}원 (${marketData.usdKrw.change > 0 ? '+' : ''}${marketData.usdKrw.changeRate}%)
 - 주요 종목 1: ${marketData.topMovers[0].name} (${marketData.topMovers[0].price.toLocaleString()}원, ${marketData.topMovers[0].changeRate}%, ${marketData.topMovers[0].foreignNet})
 - 주요 종목 2: ${marketData.topMovers[1].name} (${marketData.topMovers[1].price.toLocaleString()}원, ${marketData.topMovers[1].changeRate}%, ${marketData.topMovers[1].foreignNet})
-
+${trendPromptAddition}
 위 데이터를 바탕으로 최고의 퀄리티를 지닌 숏폼 콘텐츠를 구성해주세요.
 `;
 

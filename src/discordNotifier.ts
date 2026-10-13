@@ -124,6 +124,12 @@ export async function sendAlphaShortsDiscordAlert(data: {
         totalViews: number;
         totalVideos: number;
     } | null;
+    insights?: {
+        audienceRetentionDiagnosis: string;
+        trendingKeywords: string[];
+        viralFormatTrends: string;
+        nextVideoStrategy: string;
+    } | null;
 }): Promise<void> {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (!webhookUrl) {
@@ -159,6 +165,24 @@ export async function sendAlphaShortsDiscordAlert(data: {
             fields.push({
                 name: '📈 실시간 채널 현황',
                 value: `• 구독자: **${data.metrics.subscriberCount.toLocaleString()}명**\n• 누적 조회수: **${data.metrics.totalViews.toLocaleString()}회**\n• 총 영상: **${data.metrics.totalVideos}개**`,
+                inline: false
+            });
+        }
+
+        if (data.insights) {
+            fields.push({
+                name: '🧠 AI 시청률 진단 & 이탈률 분석',
+                value: data.insights.audienceRetentionDiagnosis,
+                inline: false
+            });
+            fields.push({
+                name: '🔥 실시간 급상승 유행 키워드',
+                value: data.insights.trendingKeywords.map(k => `\`#${k}\``).join('  '),
+                inline: false
+            });
+            fields.push({
+                name: '🎯 차기 쇼츠 바이럴 공략 (내일 적용)',
+                value: `• **포맷 트렌드:** ${data.insights.viralFormatTrends}\n• **액션 플랜:** ${data.insights.nextVideoStrategy}`,
                 inline: false
             });
         }

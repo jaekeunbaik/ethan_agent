@@ -76,13 +76,24 @@ async function main() {
         console.warn(`⚠️ 유튜브 업로드 단계 건너뜀: ${ytErr.message}`);
     }
 
-    // 5단계: 실시간 채널 성과 조회 후 단 1회의 디스코드 알림으로 통합 전송
-    console.log('\n📊 [5/5] 유튜브 채널 지표 분석 및 통합 알림 전송 중...');
+    // 5단계: 실시간 채널 성과 & 급상승 유행 트렌드 AI 정밀 분석 후 단 1회의 디스코드 알림으로 통합 전송
+    console.log('\n📊 [5/5] 유튜브 채널 지표 및 실시간 유행 트렌드 AI 자가 분석 중...');
     let channelMetrics = null;
+    let insights = null;
     try {
         const { trackChannelPerformance } = await import('./src/channelPerformanceMonitor');
         channelMetrics = await trackChannelPerformance();
     } catch {}
+
+    try {
+        const { analyzeChannelAndTrends } = await import('./src/trendAndPerformanceAnalyzer');
+        insights = await analyzeChannelAndTrends(channelMetrics);
+        console.log(`✅ AI 성과 진단 완료: [${insights.channelStatusSummary}]`);
+        console.log(`   - 유행 키워드: ${insights.trendingKeywords.join(', ')}`);
+        console.log(`   - 차기 전략: ${insights.nextVideoStrategy}`);
+    } catch (anErr: any) {
+        console.warn('⚠️ AI 트렌드/성과 분석 단계 경고:', anErr.message);
+    }
 
     try {
         const { sendAlphaShortsDiscordAlert } = await import('./src/discordNotifier');
@@ -96,6 +107,12 @@ async function main() {
                 subscriberCount: channelMetrics.subscriberCount,
                 totalViews: channelMetrics.totalViews,
                 totalVideos: channelMetrics.totalVideos
+            } : null,
+            insights: insights ? {
+                audienceRetentionDiagnosis: insights.audienceRetentionDiagnosis,
+                trendingKeywords: insights.trendingKeywords,
+                viralFormatTrends: insights.viralFormatTrends,
+                nextVideoStrategy: insights.nextVideoStrategy
             } : null
         });
     } catch (e: any) {
