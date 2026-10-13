@@ -489,28 +489,49 @@ export function renderSceneFrame(scene: AlphaShortsScene, outputPath: string) {
     fs.writeFileSync(outputPath, buffer);
 }
 
-// ─── Edge-TTS 오디오 생성 ──────────────────────────────────────────────────
+// ─── Edge-TTS 오디오 생성 (빠르고 찰진 1.22배속) ─────────────────────────────
 
 export async function generateEdgeTtsAudio(text: string, outputMp3Path: string): Promise<number> {
     const cleanText = text.replace(/["\n\r]/g, ' ').trim();
 
     try {
-        const { ttsSave } = await import('edge-tts');
-        await ttsSave(cleanText, outputMp3Path, { voice: 'ko-KR-InJoonNeural', rate: '+5%' });
+        // out/index.js 절대경로로 CJS 로드하여 ts-node 타입스트리핑 우회
+        const edgeTtsModule = require(path.join(process.cwd(), 'node_modules', 'edge-tts', 'out', 'index.js'));
+        await edgeTtsModule.ttsSave(cleanText, outputMp3Path, {
+            voice: 'ko-KR-InJoonNeural',
+            rate: '+22%',  // 쇼츠 특화 빠른 호흡 1.22배속
+            pitch: '+0Hz'
+        });
     } catch (err: any) {
         console.warn('⚠️ edge-tts ttsSave 실패, 구글 TTS 폴백 시도:', err.message);
         const { getAudioUrl } = await import('google-tts-api');
         const axios = (await import('axios')).default;
         const url = getAudioUrl(cleanText, { lang: 'ko', slow: false });
         const res = await axios.get(url, { responseType: 'arraybuffer' });
-        fs.writeFileSync(outputMp3Path, Buffer.from(res.data));
+        const rawMp3 = outputMp3Path + '.raw.mp3';
+        fs.writeFileSync(rawMp3, Buffer.from(res.data));
+
+        // ffmpeg로 1.25배속 고속 변환
+        await new Promise<void>((resFfmpeg, rejFfmpeg) => {
+            ffmpeg(rawMp3)
+                .audioFilters('atempo=1.25')
+                .save(outputMp3Path)
+                .on('end', () => {
+                    try { fs.unlinkSync(rawMp3); } catch {}
+                    resFfmpeg();
+                })
+                .on('error', (e) => {
+                    fs.copyFileSync(rawMp3, outputMp3Path);
+                    resFfmpeg();
+                });
+        });
     }
 
     // 오디오 길이(초) 추출 via ffprobe
     return new Promise((resolve) => {
         ffmpeg.ffprobe(outputMp3Path, (err, metadata) => {
             if (err || !metadata?.format?.duration) {
-                resolve(7); // fallback: 7초
+                resolve(5.5); // fallback: 5.5초
             } else {
                 resolve(metadata.format.duration);
             }

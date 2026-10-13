@@ -31,20 +31,22 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
     const isFall = marketData.kospi.changeRate < 0;
 
     const systemPrompt = `
-당신은 최고 권위의 경제 금융 전문 유튜브 채널의 수석 퀀트 애널리스트이자 숏폼 디렉터입니다.
+당신은 구독자 150만 유튜브 경제/재테크 숏폼 전문 크리에이터이자 재치 있는 팩폭 일타강사입니다.
 주어진 실제 금융 시장 팩트 데이터(코스피, 코스닥, 환율, 대형주 수급)를 바탕으로,
-시청자의 이탈을 방지하고 45초 동안 몰입도를 극대화하는 바이럴 금융 숏폼 대본을 생성하세요.
+[지루하고 딱딱한 뉴스 말투 절대 금지!]
+시청자가 첫 1초 만에 "ㅋㅋㅋ 맞아" 하며 끝까지 보게 만드는 찰지고 위트 넘치는 유튜브 바이럴 쇼츠 대본을 작성하세요.
 
 [필수 원칙]
-1. 절대로 허위나 과장된 거짓 정보를 지어내지 말고, 입력된 실제 수치와 금융 팩트에 충실하세요.
-2. 어조: 차분하면서도 긴장감 있고 신뢰도 높은 아나운서/경제 전문가 톤.
-3. 씬 구성은 정확히 4개 씬으로 구성합니다:
-   - Scene 1: [HOOK] 당일 코스피/코스닥 지수와 시장 분위기 요약 (chartType: 'CANDLE_SUMMARY')
-   - Scene 2: [SUPPLY] 환율 변동과 외국인/기관 수급 분석 (chartType: 'SUPPLY_BAR')
-   - Scene 3: [STOCKS] 삼성전자/SK하이닉스 등 주요 대형주 흐름 (chartType: 'STOCK_COMPARE')
-   - Scene 4: [STRATEGY & CTA] 내일 장전 체크포인트 및 마무리 안내 (chartType: 'CHECKLIST')
-4. voiceScript는 실제 TTS로 읽었을 때 각 씬당 8~10초, 총 40초 내외가 되도록 군더더기 없이 간결하게 작성하세요.
-5. 반드시 제공된 JSON 스키마 규격으로만 응답하세요.
+1. 말투: 말 빠르고 센스 넘치는 2030 맞춤형 구어체! ("계좌 열어보고 뒷목 잡으셨죠?", "외인 형님들이 던졌습니다", "심장 꽉 붙잡으세요")
+2. 거짓 정보는 쓰지 말되, 실제 수치(지수, 등락폭, 환율)를 매우 찰지고 드라마틱하게 비유하세요.
+3. 호흡: 한 문장이 짧고 타격감 있게 팍팍 꽂히도록 작성.
+4. 씬 구성 (정확히 4개 씬):
+   - Scene 1: [HOOK] 오늘 장 열어보고 기절할 뻔한 상황 찰진 훅 (chartType: 'CANDLE_SUMMARY')
+   - Scene 2: [SUPPLY] 환율 급등과 외인 패닉셀 팩폭 (chartType: 'SUPPLY_BAR')
+   - Scene 3: [STOCKS] 삼성전자 주주들의 비명 vs 하이닉스의 방어전 (chartType: 'STOCK_COMPARE')
+   - Scene 4: [STRATEGY & CTA] 내일 뇌동매매 금지 팩트체크 & 고정댓글 안내 (chartType: 'CHECKLIST')
+5. voiceScript는 실제 읽었을 때 씬당 6~8초(빠른 템포) 내외로 리듬감 있게 작성하세요.
+6. 반드시 제공된 JSON 스키마 규격으로만 응답하세요.
 `;
 
     const userPrompt = `
@@ -68,14 +70,29 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
             temperature: 0.3
         });
 
-        if (typeof responseData === 'object' && responseData.scenes) {
-            return responseData as AlphaShortsContent;
+        if (typeof responseData === 'object' && responseData !== null) {
+            if (Array.isArray(responseData.scenes)) {
+                return responseData as AlphaShortsContent;
+            }
+            // 중첩 래퍼 객체 탐색
+            for (const key of Object.keys(responseData)) {
+                if (responseData[key] && Array.isArray(responseData[key].scenes)) {
+                    return responseData[key] as AlphaShortsContent;
+                }
+            }
         }
 
-        const responseText = String(responseData);
+        const responseText = typeof responseData === 'string' ? responseData : JSON.stringify(responseData);
         const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleaned);
-
+        if (Array.isArray(parsed.scenes)) {
+            return parsed as AlphaShortsContent;
+        }
+        for (const key of Object.keys(parsed)) {
+            if (parsed[key] && Array.isArray(parsed[key].scenes)) {
+                return parsed[key] as AlphaShortsContent;
+            }
+        }
         return parsed as AlphaShortsContent;
     } catch (error: any) {
         console.warn('[alphaContentGenerator] Gemini 호출 실패 또는 파싱 오류로 정밀 백업 템플릿 가동:', error.message);
