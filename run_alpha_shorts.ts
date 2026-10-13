@@ -89,6 +89,18 @@ async function main() {
     } catch (e: any) {
         console.warn('⚠️ 디스코드 알림 전송 오류:', e.message);
     }
+
+    // 6단계: 실시간 채널 성과 및 조회수 모니터링
+    console.log('\n📊 [6/6] 유튜브 채널 성과 및 조회수 모니터링 분석 중...');
+    try {
+        const { trackChannelPerformance, sendPerformanceReportDiscord } = await import('./src/channelPerformanceMonitor');
+        const metrics = await trackChannelPerformance();
+        if (metrics) {
+            await sendPerformanceReportDiscord(metrics);
+        }
+    } catch (metricErr: any) {
+        console.warn('⚠️ 채널 모니터링 단계 경고:', metricErr.message);
+    }
 }
 
 main().catch(err => {
