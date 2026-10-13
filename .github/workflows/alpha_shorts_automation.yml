@@ -1,0 +1,42 @@
+name: 🎬 AlphaShorts YouTube Autonomous Factory
+
+on:
+  schedule:
+    # 한국 시간(KST) 평일 오후 3:50 (UTC 06:50) 장마감 직후 자동 가동
+    - cron: '50 6 * * 1-5'
+  workflow_dispatch: # GitHub 웹에서 버튼 클릭으로 즉시 1회 실행 가능
+
+jobs:
+  run-alpha-shorts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Install Korean Fonts and FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg fonts-nanum fonts-noto-cjk
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run AlphaShorts and Upload to YouTube Shorts
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: npx ts-node run_alpha_shorts.ts

@@ -576,8 +576,8 @@ export async function renderAlphaShortsVideo(content: AlphaShortsContent, output
                     '-c:a aac',
                     '-b:a 192k',
                     '-shortest',
-                    // 미세한 줌인 효과 (1.0 -> 1.04)로 정적 슬라이드 느낌 완전 제거
-                    `-vf zoompan=z='min(zoom+0.0006,1.04)':d=${Math.ceil(safeDuration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`,
+                    // 흔들림 없는 완벽한 고해상도 1080x1920 록다운 프레임
+                    '-vf scale=1080:1920,fps=30',
                     '-preset fast'
                 ])
                 .save(sceneVideoPath)
