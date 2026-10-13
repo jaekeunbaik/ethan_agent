@@ -34,11 +34,14 @@ async function main() {
     const content = await generateAlphaShortsContent(marketData);
     console.log(`✅ 콘텐츠 기획 완료! [주제: ${content.topic}]`);
     console.log(`   - 유튜브 제목: ${content.youtubeTitle}`);
-    console.log(`   - 씬 개수: ${content.scenes.length}개`);
-    content.scenes.forEach((s, idx) => {
-        console.log(`     [Scene ${idx + 1}] ${s.badge} | ${s.title}`);
-        console.log(`       대본: "${s.voiceScript}"`);
-    });
+    const scenesCount = content.scenes ? content.scenes.length : 0;
+    console.log(`   - 씬 개수: ${scenesCount}개`);
+    if (content.scenes && content.scenes.length > 0) {
+        content.scenes.forEach((s, idx) => {
+            console.log(`     [Scene ${idx + 1}] ${s.badge} | ${s.title}`);
+            console.log(`       대본: "${s.voiceScript}"`);
+        });
+    }
 
     // 3단계: 1080x1920 세로형 다크 글래스모피즘 모션 비디오 렌더링
     console.log('\n🎥 [3/3] 1080x1920 초고화질 모션 인포그래픽 쇼츠 렌더링 시작...');

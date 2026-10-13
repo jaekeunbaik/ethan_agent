@@ -68,97 +68,108 @@ export async function generateAlphaShortsContent(marketData: MarketSummaryData):
             temperature: 0.3
         });
 
+        let candidate: any = null;
         if (typeof responseData === 'object' && responseData !== null) {
-            if (Array.isArray(responseData.scenes)) {
-                return responseData as AlphaShortsContent;
-            }
-            // 중첩 래퍼 객체 탐색
-            for (const key of Object.keys(responseData)) {
-                if (responseData[key] && Array.isArray(responseData[key].scenes)) {
-                    return responseData[key] as AlphaShortsContent;
+            candidate = responseData;
+        } else {
+            const responseText = String(responseData);
+            const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            candidate = JSON.parse(cleaned);
+        }
+
+        // 중첩 객체 탐색
+        if (candidate && !Array.isArray(candidate.scenes)) {
+            for (const key of Object.keys(candidate)) {
+                if (candidate[key] && Array.isArray(candidate[key].scenes)) {
+                    candidate = candidate[key];
+                    break;
                 }
             }
         }
 
-        const responseText = typeof responseData === 'string' ? responseData : JSON.stringify(responseData);
-        const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleaned);
-        if (Array.isArray(parsed.scenes)) {
-            return parsed as AlphaShortsContent;
+        // 만약 여전히 scenes가 없다면 100% 안전하게 기본 팩트 씬으로 정규화
+        if (!candidate || !Array.isArray(candidate.scenes) || candidate.scenes.length === 0) {
+            console.warn('[alphaContentGenerator] Gemini 응답에 scenes 배열이 없어 기본 팩트 씬으로 안전 정규화합니다.');
+            return buildFallbackContent(marketData, isFall, candidate?.topic, candidate?.youtubeTitle);
         }
-        for (const key of Object.keys(parsed)) {
-            if (parsed[key] && Array.isArray(parsed[key].scenes)) {
-                return parsed[key] as AlphaShortsContent;
-            }
-        }
-        return parsed as AlphaShortsContent;
+
+        return {
+            topic: candidate.topic || `오늘의 장마감 팩트 리포트 (${marketData.date})`,
+            youtubeTitle: candidate.youtubeTitle || `오늘 국장 왜 이럴까? ${marketData.kospi.changeRate}% 변동 30초 요약 #주식 #코스피`,
+            description: candidate.description || `오늘(${marketData.date}) 코스피 및 환율 주요 수급 요약입니다.`,
+            tags: Array.isArray(candidate.tags) ? candidate.tags : ['주식', '코스피', '환율', '재테크', '쇼츠'],
+            scenes: candidate.scenes
+        };
     } catch (error: any) {
         console.warn('[alphaContentGenerator] Gemini 호출 실패 또는 파싱 오류로 정밀 백업 템플릿 가동:', error.message);
-
-        // Fallback: 팩트 데이터를 온전히 보존하는 정밀 템플릿
-        return {
-            topic: `오늘의 장마감 팩트 리포트 (${marketData.date})`,
-            youtubeTitle: `오늘 국장 왜 이럴까? ${marketData.kospi.changeRate}% 변동의 진짜 이유 30초 요약 #주식 #코스피`,
-            description: `오늘(${marketData.date}) 코스피 및 환율 주요 수급 요약입니다. 투자의 책임은 본인에게 있습니다.`,
-            tags: ['주식', '코스피', '환율', '삼성전자', 'SK하이닉스', '재테크', '쇼츠'],
-            scenes: [
-                {
-                    sceneIndex: 1,
-                    badge: '🚨 시장 마감 속보',
-                    title: `코스피 ${marketData.kospi.price.toLocaleString()}p 마감`,
-                    subtitle: marketData.marketSummaryHeadline,
-                    highlightStat: {
-                        label: 'KOSPI 지수',
-                        value: `${marketData.kospi.price.toLocaleString()} pt`,
-                        subValue: `${marketData.kospi.changeRate}%`,
-                        isPositive: !isFall
-                    },
-                    chartType: 'CANDLE_SUMMARY',
-                    voiceScript: `오늘 코스피 지수가 ${marketData.kospi.changeRate}% 변동하며 ${marketData.kospi.price.toFixed(0)}선에서 마감했습니다. 시장을 흔든 핵심 변수를 빠르게 짚어드립니다.`
-                },
-                {
-                    sceneIndex: 2,
-                    badge: '📊 수급 & 환율 체크',
-                    title: `환율 ${marketData.usdKrw.price.toFixed(1)}원 & 외국인 수급`,
-                    subtitle: '환율 변동성 확대에 따른 외인 매도세',
-                    highlightStat: {
-                        label: '원·달러 환율',
-                        value: `${marketData.usdKrw.price.toFixed(1)}원`,
-                        subValue: `${marketData.usdKrw.changeRate > 0 ? '+' : ''}${marketData.usdKrw.changeRate}% 변동`,
-                        isPositive: marketData.usdKrw.changeRate < 0
-                    },
-                    chartType: 'SUPPLY_BAR',
-                    voiceScript: `달러 환율이 ${marketData.usdKrw.price.toFixed(0)}원 부근을 유지하면서 외국인 자금의 리스크 회피 심리가 시장을 압박했습니다.`
-                },
-                {
-                    sceneIndex: 3,
-                    badge: '🏢 대형주 현주소',
-                    title: `${marketData.topMovers[0].name} vs ${marketData.topMovers[1].name}`,
-                    subtitle: '반도체 대장주 엇갈린 수급 흐름',
-                    highlightStat: {
-                        label: marketData.topMovers[0].name,
-                        value: `${marketData.topMovers[0].price.toLocaleString()}원`,
-                        subValue: `${marketData.topMovers[0].changeRate}%`,
-                        isPositive: marketData.topMovers[0].changeRate >= 0
-                    },
-                    chartType: 'STOCK_COMPARE',
-                    voiceScript: `${marketData.topMovers[0].name}는 ${marketData.topMovers[0].changeRate}퍼센트를 기록한 반면, ${marketData.topMovers[1].name}는 상대적 견조함을 보였습니다.`
-                },
-                {
-                    sceneIndex: 4,
-                    badge: '💡 내일 장전 전략',
-                    title: '내일 시초가 핵심 체크포인트',
-                    subtitle: '야간 미 증시 선물 및 환율 안정 확인 필수',
-                    highlightStat: {
-                        label: '내일의 리스크 지수',
-                        value: '관망 및 분할 대응',
-                        subValue: '리스크 관리 구간',
-                        isPositive: true
-                    },
-                    chartType: 'CHECKLIST',
-                    voiceScript: `내일 장 시작 전 미 증시 마감과 환율 안정 여부를 반드시 확인하세요. 성공 투자를 응원합니다.`
-                }
-            ]
-        };
+        return buildFallbackContent(marketData, isFall);
     }
 }
+
+function buildFallbackContent(marketData: MarketSummaryData, isFall: boolean, customTopic?: string, customTitle?: string): AlphaShortsContent {
+    return {
+        topic: customTopic || `오늘의 장마감 팩트 리포트 (${marketData.date})`,
+        youtubeTitle: customTitle || `오늘 국장 왜 이럴까? ${marketData.kospi.changeRate}% 변동의 진짜 이유 30초 요약 #주식 #코스피`,
+        description: `오늘(${marketData.date}) 코스피 및 환율 주요 수급 요약입니다. 투자의 책임은 본인에게 있습니다.`,
+        tags: ['주식', '코스피', '환율', '삼성전자', 'SK하이닉스', '재테크', '쇼츠'],
+        scenes: [
+            {
+                sceneIndex: 1,
+                badge: '🚨 시장 마감 속보',
+                title: `코스피 ${marketData.kospi.price.toLocaleString()}p 마감`,
+                subtitle: marketData.marketSummaryHeadline,
+                highlightStat: {
+                    label: 'KOSPI 지수',
+                    value: `${marketData.kospi.price.toLocaleString()} pt`,
+                    subValue: `${marketData.kospi.changeRate}%`,
+                    isPositive: !isFall
+                },
+                chartType: 'CANDLE_SUMMARY',
+                voiceScript: `오늘 주식 계좌 열어보신 분들은 진짜 깜짝 놀라셨을 텐데요! 코스피가 무려 ${marketData.kospi.changeRate}%나 출렁이며 ${marketData.kospi.price.toFixed(0)}선에서 마감했습니다.`
+            },
+            {
+                sceneIndex: 2,
+                badge: '📊 수급 & 환율 체크',
+                title: `환율 ${marketData.usdKrw.price.toFixed(1)}원 & 외국인 수급`,
+                subtitle: '환율 변동성 확대에 따른 외인 매도세',
+                highlightStat: {
+                    label: '원·달러 환율',
+                    value: `${marketData.usdKrw.price.toFixed(1)}원`,
+                    subValue: `${marketData.usdKrw.changeRate > 0 ? '+' : ''}${marketData.usdKrw.changeRate}% 변동`,
+                    isPositive: marketData.usdKrw.changeRate < 0
+                },
+                chartType: 'SUPPLY_BAR',
+                voiceScript: `첫 번째 이유는 환율인데요! 원달러 환율이 ${marketData.usdKrw.price.toFixed(0)}원 부근을 유지하면서 외국인 자금이 썰물처럼 빠져나간 겁니다.`
+            },
+            {
+                sceneIndex: 3,
+                badge: '🏢 대형주 현주소',
+                title: `${marketData.topMovers[0].name} vs ${marketData.topMovers[1].name}`,
+                subtitle: '반도체 대장주 엇갈린 수급 흐름',
+                highlightStat: {
+                    label: marketData.topMovers[0].name,
+                    value: `${marketData.topMovers[0].price.toLocaleString()}원`,
+                    subValue: `${marketData.topMovers[0].changeRate}%`,
+                    isPositive: marketData.topMovers[0].changeRate >= 0
+                },
+                chartType: 'STOCK_COMPARE',
+                voiceScript: `두 번째는 대형주 희비인데요! ${marketData.topMovers[0].name}는 외국인 매도세로 밀린 반면, ${marketData.topMovers[1].name}는 기관 방어로 악착같이 버텨냈죠.`
+            },
+            {
+                sceneIndex: 4,
+                badge: '💡 내일 장전 전략',
+                title: '내일 시초가 핵심 체크포인트',
+                subtitle: '야간 미 증시 선물 및 환율 안정 확인 필수',
+                highlightStat: {
+                    label: '내일의 리스크 지수',
+                    value: '관망 및 분할 대응',
+                    subValue: '리스크 관리 구간',
+                    isPositive: true
+                },
+                chartType: 'CHECKLIST',
+                voiceScript: `그렇다면 내일은 어떻게 대응해야 할까요? 장 시작 전 환율 진정 여부 꼭 체크하시고, 불나방 매매는 절대 금물입니다!`
+            }
+        ]
+    };
+}
+
