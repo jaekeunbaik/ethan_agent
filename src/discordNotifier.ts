@@ -109,3 +109,70 @@ export async function sendDiscordReport(payload: MarketingNotificationPayload): 
         console.error('❌ [draft_secretary] 디스코드 웹훅 전송 실패:', error.message || error);
     }
 }
+
+/**
+ * AlphaShorts 금융 쇼츠 제작/업로드 완료 디스코드 알림
+ */
+export async function sendAlphaShortsDiscordAlert(data: {
+    topic: string;
+    videoName: string;
+    youtubeStatus: string;
+    marketSummary: string;
+    tags: string[];
+}): Promise<void> {
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    if (!webhookUrl) {
+        console.warn('⚠️ DISCORD_WEBHOOK_URL이 .env에 설정되지 않았습니다.');
+        return;
+    }
+
+    try {
+        const body = {
+            username: 'AlphaShorts Bot',
+            avatar_url: 'https://cdn-icons-png.flaticon.com/512/2953/2953363.png',
+            embeds: [
+                {
+                    title: `🎬 [AlphaShorts] 고화질 금융 쇼츠 팩토리 가동 완료!`,
+                    description: `Ethan님! 오늘의 장마감 팩트 기반 유튜브 쇼츠 영상이 성공적으로 렌더링되었습니다.`,
+                    color: 0x10B981, // 산뜻한 에메랄드 그린
+                    fields: [
+                        {
+                            name: '📌 영상 주제',
+                            value: `**${data.topic}**`,
+                            inline: false
+                        },
+                        {
+                            name: '📊 당일 시장 팩트 요약',
+                            value: data.marketSummary,
+                            inline: false
+                        },
+                        {
+                            name: '📁 완성된 비디오 파일',
+                            value: `\`${data.videoName}\``,
+                            inline: true
+                        },
+                        {
+                            name: '📺 유튜브 상태',
+                            value: data.youtubeStatus,
+                            inline: true
+                        },
+                        {
+                            name: '🏷️ 추천 태그',
+                            value: data.tags.join(', '),
+                            inline: false
+                        }
+                    ],
+                    footer: {
+                        text: `AlphaShorts Autonomous Engine • ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                    }
+                }
+            ]
+        };
+
+        await axios.post(webhookUrl, body);
+        console.log('📢 [AlphaShorts] 디스코드 완료 알림 발송 성공!');
+    } catch (err: any) {
+        console.error('❌ [AlphaShorts] 디스코드 알림 발송 실패:', err.message || err);
+    }
+}
+

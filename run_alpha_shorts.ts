@@ -52,19 +52,39 @@ async function main() {
     console.log(`📁 비디오 경로: ${finalVideo}`);
     console.log('===============================================================\n');
 
-    // 디스코드 알림 (설정된 경우 자동 발송)
+    // 4단계: YouTube Shorts 업로드 시도
+    console.log('\n📺 [4/4] YouTube Shorts 업로드 상태 확인...');
+    let youtubeStatusText = '로컬 렌더링 완료 (YouTube 토큰 등록 시 즉시 자동 게시)';
     try {
-        await sendDiscordReport({
-            topic: content.topic,
-            threadsPostId: null,
-            mytiThreadsPostId: null,
-            instagramPostId: null,
-            youtubeShortsUrl: `로컬 생성 완료: ${path.basename(finalVideo)}`,
-            publicImageUrls: [],
-            status: 'SUCCESS'
+        const { uploadToYouTubeShorts } = await import('./src/youtubeUploader');
+        const uploadRes = await uploadToYouTubeShorts({
+            videoPath: finalVideo,
+            title: content.youtubeTitle,
+            description: `${content.description}\n\n#Shorts #주식 #코스피 #환율`,
+            tags: content.tags
         });
-    } catch {
-        // Discord 웹훅 미설정 시 무시
+        if (uploadRes.success && uploadRes.videoUrl) {
+            youtubeStatusText = `✅ [유튜브 게시 완료](${uploadRes.videoUrl})`;
+            console.log(`🎉 유튜브 업로드 성공: ${uploadRes.videoUrl}`);
+        } else {
+            console.log(`ℹ️ 유튜브 API 연동 대기 중 (${uploadRes.error || '토큰 미설정'}) - 로컬 파일 생성 완료`);
+        }
+    } catch (ytErr: any) {
+        console.warn(`⚠️ 유튜브 업로드 단계 건너뜀: ${ytErr.message}`);
+    }
+
+    // 5단계: 디스코드로 성공 보고서 즉시 전송
+    try {
+        const { sendAlphaShortsDiscordAlert } = await import('./src/discordNotifier');
+        await sendAlphaShortsDiscordAlert({
+            topic: content.topic,
+            videoName: path.basename(finalVideo),
+            youtubeStatus: youtubeStatusText,
+            marketSummary: `• KOSPI: ${marketData.kospi.price} (${marketData.kospi.changeRate}%)\n• 환율: ${marketData.usdKrw.price}원\n• 핵심: ${marketData.marketSummaryHeadline}`,
+            tags: content.tags
+        });
+    } catch (e: any) {
+        console.warn('⚠️ 디스코드 알림 전송 오류:', e.message);
     }
 }
 
