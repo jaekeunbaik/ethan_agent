@@ -120,7 +120,17 @@ async function main() {
     }
 }
 
-main().catch(err => {
+main().catch(async err => {
     console.error('❌ AlphaShorts 파이프라인 실행 중 오류 발생:', err);
+    try {
+        const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+        if (webhookUrl) {
+            const axios = (await import('axios')).default;
+            await axios.post(webhookUrl, {
+                username: 'AlphaShorts Emergency',
+                content: `🚨 **[AlphaShorts 긴급 오류 리포트]**\n오류: ${err?.message || '알 수 없는 오류'}\n\`\`\`\n${(err?.stack || '').slice(0, 1500)}\n\`\`\``
+            });
+        }
+    } catch {}
     process.exit(1);
 });
