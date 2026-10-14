@@ -110,12 +110,27 @@ ${trendPromptAddition}
             return buildFallbackContent(marketData, isFall, candidate?.topic, candidate?.youtubeTitle);
         }
 
+        const fallback = buildFallbackContent(marketData, isFall);
+        const normalizedScenes: AlphaShortsScene[] = candidate.scenes.map((s: any, idx: number) => {
+            const fbScene = fallback.scenes[idx] || fallback.scenes[0];
+            const voice = (s.voiceScript || s.narration || s.script || s.text || s.voiceOver || fbScene.voiceScript || '').trim();
+            return {
+                sceneIndex: idx + 1,
+                badge: s.badge || fbScene.badge,
+                title: s.title || fbScene.title,
+                subtitle: s.subtitle || fbScene.subtitle,
+                highlightStat: s.highlightStat || fbScene.highlightStat,
+                chartType: s.chartType || fbScene.chartType,
+                voiceScript: voice.length > 5 ? voice : fbScene.voiceScript
+            };
+        });
+
         return {
             topic: candidate.topic || `오늘의 장마감 팩트 리포트 (${marketData.date})`,
             youtubeTitle: candidate.youtubeTitle || `오늘 국장 왜 이럴까? ${marketData.kospi.changeRate}% 변동 30초 요약 #주식 #코스피`,
             description: candidate.description || `오늘(${marketData.date}) 코스피 및 환율 주요 수급 요약입니다.`,
             tags: Array.isArray(candidate.tags) ? candidate.tags : ['주식', '코스피', '환율', '재테크', '쇼츠'],
-            scenes: candidate.scenes
+            scenes: normalizedScenes
         };
     } catch (error: any) {
         console.warn('[alphaContentGenerator] Gemini 호출 실패 또는 파싱 오류로 정밀 백업 템플릿 가동:', error.message);

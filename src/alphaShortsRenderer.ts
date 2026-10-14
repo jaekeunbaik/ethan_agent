@@ -44,8 +44,11 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
     ctx.closePath();
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const words = text.split(' ');
+function wrapText(ctx: CanvasRenderingContext2D, text: string | undefined | null, maxWidth: number): string[] {
+    if (!text) return [''];
+    const safeText = String(text).trim();
+    if (!safeText) return [''];
+    const words = safeText.split(' ');
     const lines: string[] = [];
     let currentLine = '';
 
