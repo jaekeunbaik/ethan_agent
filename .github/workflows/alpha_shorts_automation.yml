@@ -38,6 +38,11 @@ jobs:
     - name: Build TypeScript
       run: npm run build
 
+    - name: Ensure binary permissions
+      run: |
+        chmod -R +x node_modules/ffmpeg-static || true
+        chmod -R +x node_modules/ffprobe-static || true
+
     - name: Run AlphaShorts and Upload to YouTube Shorts
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -47,4 +52,4 @@ jobs:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-      run: npx ts-node run_alpha_shorts.ts
+      run: node dist/run_alpha_shorts.js

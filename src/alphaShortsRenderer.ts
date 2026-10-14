@@ -11,8 +11,16 @@ import { AlphaShortsScene, AlphaShortsContent } from './alphaContentGenerator';
 
 const execAsync = util.promisify(exec);
 
-if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
-if (ffprobePath && (ffprobePath.path || ffprobePath)) {
+// 시스템에 설치된 ffmpeg 우선 사용 (Linux EACCES 방지), 없으면 ffmpeg-static 사용
+if (process.platform === 'linux' && fs.existsSync('/usr/bin/ffmpeg')) {
+    ffmpeg.setFfmpegPath('/usr/bin/ffmpeg');
+} else if (ffmpegPath) {
+    ffmpeg.setFfmpegPath(ffmpegPath);
+}
+
+if (process.platform === 'linux' && fs.existsSync('/usr/bin/ffprobe')) {
+    ffmpeg.setFfprobePath('/usr/bin/ffprobe');
+} else if (ffprobePath && (ffprobePath.path || ffprobePath)) {
     ffmpeg.setFfprobePath(ffprobePath.path || ffprobePath);
 }
 
