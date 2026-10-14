@@ -2,9 +2,14 @@ name: 🎬 AlphaShorts YouTube Autonomous Factory
 
 on:
   schedule:
-    # 한국 시간(KST) 평일 오후 3:50 (UTC 06:50) 장마감 직후 자동 가동
-    - cron: '50 6 * * 1-5'
-  workflow_dispatch: # GitHub 웹에서 버튼 클릭으로 즉시 1회 실행 가능
+    # 1차: 한국 시간(KST) 평일 15:53 (UTC 06:53) - 50분대 트래픽 정체 회피
+    - cron: '53 6 * * 1-5'
+    # 2차 Failover: 한국 시간(KST) 평일 16:15 (UTC 07:15) - 1차 누락 시 백업 가동
+    - cron: '15 7 * * 1-5'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'trigger.txt'
 
 jobs:
   run-alpha-shorts:
