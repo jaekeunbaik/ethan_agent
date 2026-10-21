@@ -4,7 +4,7 @@ import { ContentPlan, FeedbackMemory, ScriptOutput, KatalkMessage } from './type
 
 dotenv.config();
 
-const DEFAULT_COUPANG_URL = process.env.COUPANG_PARTNERS_URL || 'https://link.coupang.com/a/bC1234';
+const DEFAULT_COUPANG_URL = process.env.COUPANG_PARTNERS_URL || 'https://link.coupang.com/a/h183YcFkvA';
 
 /**
  * ✍️ ScriptAgent (대본/카피 에이전트)
