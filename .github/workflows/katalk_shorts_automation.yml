@@ -10,6 +10,7 @@ on:
   push:
     paths:
       - 'trigger.txt'
+      - '.github/workflows/katalk_shorts_automation.yml'
 
 jobs:
   run-katalk-shorts:
