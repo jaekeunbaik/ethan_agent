@@ -89,6 +89,7 @@ export async function runScriptAgent(plan: ContentPlan, feedback: FeedbackMemory
             messages,
             ctaQuiz,
             coupangComment,
+            coupangKeyword: plan.coupangKeyword,
             youtubeDescription,
             tags
         };
@@ -121,6 +122,7 @@ function getFallbackScript(plan: ContentPlan): ScriptOutput {
         messages,
         ctaQuiz: 'Q. 솔직히 이건 부장님이 대인배다 vs 그래도 퇴사각이다? 댓글로 남겨줘!',
         coupangComment,
+        coupangKeyword: plan.coupangKeyword,
         youtubeDescription: `${plan.title}\n\nQ. 이건 부장님이 대인배다 vs 그래도 퇴사각이다?\n\n🛒 피로회복/숙취해소 꿀템: ${DEFAULT_COUPANG_URL}\n(이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.)\n\n#Shorts #카톡썰 #직장인썰 #레전드썰`,
         tags: ['Shorts', '카톡썰', '직장인썰', '레전드썰', '유머']
     };

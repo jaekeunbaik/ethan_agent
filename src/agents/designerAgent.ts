@@ -125,6 +125,47 @@ function renderKatalkFrame(
     const bannerText = stripEmojis(script.hookHeadline);
     ctx.fillText(bannerText.length > 22 ? bannerText.substring(0, 22) + '...' : bannerText, WIDTH / 2, 188);
 
+    // 2-3. 🛒 쿠팡 파트너스 추천 상품 플로팅 뱃지 UI (시청자 시선 강탈 & 링크 유도)
+    const coupangProduct = script.coupangKeyword || '영상 속 추천템';
+    const badgeTextFull = `  ${coupangProduct}  |  댓글 특가 링크 >  `;
+    ctx.font = `bold 28px ${FONT_FAMILY}`;
+    const badgeW = Math.min(WIDTH - 100, Math.max(520, ctx.measureText(badgeTextFull).width + 120));
+    const badgeX = (WIDTH - badgeW) / 2;
+    const badgeY = 270;
+    const badgeH = 64;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.18)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+    roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 32);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.strokeStyle = '#F97316'; // 쿠팡 오렌지 테두리
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+
+    // 쿠팡 미니 태그 '쿠팡'
+    roundRect(ctx, badgeX + 10, badgeY + 10, 80, 44, 22);
+    ctx.fillStyle = '#E11D48'; // 쿠팡 시그니처 레드
+    ctx.fill();
+    ctx.font = `bold 22px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('쿠팡', badgeX + 10 + 40, badgeY + 40);
+
+    // 상품 키워드 & 댓글 링크 안내 텍스트
+    ctx.font = `bold 28px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#0F172A';
+    ctx.textAlign = 'left';
+    ctx.fillText(coupangProduct, badgeX + 105, badgeY + 43);
+
+    ctx.font = `bold 24px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#EA580C';
+    ctx.textAlign = 'right';
+    ctx.fillText('댓글 특가 링크 >', badgeX + badgeW - 25, badgeY + 42);
+
     // 3. 하단 댓글 유도 CTA 배너 (높이 220px)
     const btmH = 230;
     const btmY = HEIGHT - btmH;
@@ -178,12 +219,13 @@ function renderKatalkFrame(
         return { msg, lines, bubbleW, bubbleH, totalH };
     });
 
-    const availableH = btmY - headerH - 60;
+    const contentTopY = headerH + 95; // 쿠팡 뱃지 아래부터 메시지 시작
+    const availableH = btmY - contentTopY - 30;
     let totalMessagesH = layouts.reduce((acc, cur) => acc + cur.totalH, 0);
 
-    let startY = headerH + 40;
+    let startY = contentTopY;
     if (totalMessagesH > availableH) {
-        startY = headerH + 40 - (totalMessagesH - availableH);
+        startY = contentTopY - (totalMessagesH - availableH);
     }
 
     let curY = startY;

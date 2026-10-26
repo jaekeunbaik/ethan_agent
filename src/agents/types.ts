@@ -33,6 +33,7 @@ export interface ScriptOutput {
     messages: KatalkMessage[];
     ctaQuiz: string; // 댓글 유도 질문
     coupangComment: string; // 고정 댓글 문구 (쿠팡 파트너스 링크 포함)
+    coupangKeyword?: string; // 화면 뱃지 표시용 쿠팡 키워드
     youtubeDescription: string;
     tags: string[];
 }
