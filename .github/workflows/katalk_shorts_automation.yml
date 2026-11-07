@@ -1,16 +1,13 @@
 name: 🎬 KatalkViral YouTube Shorts Autonomous Factory
 
 on:
-  schedule:
-    # 1차 골든 타임: 매일 한국 시간(KST) 18:30 (UTC 09:30) - 퇴근/저녁 피크
-    - cron: '30 9 * * *'
-    # 2차 골든 타임: 매일 한국 시간(KST) 22:30 (UTC 13:30) - 심야 숏폼 시청 피크
-    - cron: '30 13 * * *'
+  # [DISABLED] 사용자 요청으로 정기 자동 실행 비활성화
+  # schedule:
+  #   # 1차 골든 타임: 매일 한국 시간(KST) 18:30 (UTC 09:30) - 퇴근/저녁 피크
+  #   - cron: '30 9 * * *'
+  #   # 2차 골든 타임: 매일 한국 시간(KST) 22:30 (UTC 13:30) - 심야 숏폼 시청 피크
+  #   - cron: '30 13 * * *'
   workflow_dispatch: # 깃허브 웹 화면에서 [Run workflow] 버튼으로 즉시 수동 실행 가능
-  push:
-    paths:
-      - 'trigger.txt'
-      - '.github/workflows/katalk_shorts_automation.yml'
 
 jobs:
   run-katalk-shorts:

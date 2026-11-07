@@ -1,10 +1,11 @@
 name: SNS Marketing Automation
 
 on:
-  schedule:
-    # 한국 시간(KST) 오전 8:23 (UTC 전날 23:23), 오후 6:23 (UTC 09:23)
-    # GitHub 서버 딜레이(지연)를 완벽 회피하도록 딜레이 없는 Off-peak 시간대로 재조정
-    - cron: '23 23,9 * * *'
+  # [DISABLED] 사용자 요청으로 정기 자동 실행 비활성화
+  # schedule:
+  #   # 한국 시간(KST) 오전 8:23 (UTC 전날 23:23), 오후 6:23 (UTC 09:23)
+  #   # GitHub 서버 딜레이(지연)를 완벽 회피하도록 딜레이 없는 Off-peak 시간대로 재조정
+  #   - cron: '23 23,9 * * *'
   workflow_dispatch: # 수동 실행 버튼 제공
 
 jobs:
