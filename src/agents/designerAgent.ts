@@ -240,15 +240,15 @@ function renderKatalkFrame(ctx: CanvasRenderingContext2D, script: ScriptOutput, 
 
 // 화자(이름)별 고정 음성. 처음 등장한 순서대로 배정. shortcut: edge-tts 한국어 음성이 3종뿐이라 4번째부터는 pitch만 다름.
 const VOICES = [
-    { v: 'ko-KR-SunHiNeural', p: '+0Hz' },
-    { v: 'ko-KR-InJoonNeural', p: '+0Hz' },
-    { v: 'ko-KR-HyunsuMultilingualNeural', p: '+0Hz' },
-    { v: 'ko-KR-SunHiNeural', p: '+25Hz' },
-    { v: 'ko-KR-InJoonNeural', p: '-25Hz' },
-    { v: 'ko-KR-HyunsuMultilingualNeural', p: '+20Hz' },
+    { v: 'ko-KR-SunHiNeural', p: '+0Hz', r: '+18%' },
+    { v: 'ko-KR-InJoonNeural', p: '+0Hz', r: '+22%' },
+    { v: 'ko-KR-HyunsuMultilingualNeural', p: '+0Hz', r: '+15%' },
+    { v: 'ko-KR-SunHiNeural', p: '+22Hz', r: '+28%' },
+    { v: 'ko-KR-InJoonNeural', p: '-22Hz', r: '+12%' },
+    { v: 'ko-KR-HyunsuMultilingualNeural', p: '+18Hz', r: '+25%' },
 ];
 
-async function generateTTSForMessage(msg: KatalkMessage, outputPath: string, voice: { v: string; p: string }): Promise<string> {
+async function generateTTSForMessage(msg: KatalkMessage, outputPath: string, voice: { v: string; p: string; r: string }): Promise<string> {
     const cleanText = stripEmojis(msg.text)
         .replace(/OK/gi, '오케이')
         .replace(/AI/gi, '에이아이')
@@ -260,7 +260,7 @@ async function generateTTSForMessage(msg: KatalkMessage, outputPath: string, voi
 
     try {
         const { execFileSync } = require('child_process');
-        execFileSync('python', ['-m', 'edge_tts', '--voice', voice.v, '--rate=+35%', `--pitch=${voice.p}`, '--text', cleanText, '--write-media', outputPath], { stdio: 'pipe' });
+        execFileSync('python', ['-m', 'edge_tts', '--voice', voice.v, `--rate=${voice.r}`, `--pitch=${voice.p}`, '--text', cleanText, '--write-media', outputPath], { stdio: 'pipe' });
         if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) return outputPath;
     } catch {
         // Edge-TTS 미설치 시 폴백
