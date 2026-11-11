@@ -12,7 +12,8 @@ dotenv.config();
  */
 export async function runPublisherAgent(
     script: ScriptOutput,
-    render: RenderOutput
+    render: RenderOutput,
+    privacy: 'public' | 'unlisted' | 'private' = 'public'
 ): Promise<PublishResult> {
     console.log(`\n[🛒 PublisherAgent] 유튜브 쇼츠 업로드 및 쿠팡 파트너스 링크 게시 중...`);
 
@@ -54,7 +55,7 @@ export async function runPublisherAgent(
                     defaultAudioLanguage: 'ko'
                 },
                 status: {
-                    privacyStatus: 'public',
+                    privacyStatus: privacy,
                     selfDeclaredMadeForKids: false
                 }
             },

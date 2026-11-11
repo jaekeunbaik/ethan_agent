@@ -1,7 +1,29 @@
 name: Publish Queued Shorts
 
 on:
+  # 스케줄 루틴(Claude)이 upload_queue/<slug>/script.json을 push하면 렌더 후 자동 업로드
+  push:
+    paths: ['upload_queue/*/script.json']
   workflow_dispatch:
+    inputs:
+      item:
+        description: 'upload_queue 하위 폴더명 (비우면 아직 안 올린 첫 항목)'
+        required: false
+        default: ''
+      privacy:
+        description: '공개 범위 (public은 검수 후 명시적으로)'
+        type: choice
+        options: [unlisted, public, private]
+        default: unlisted
+      dry_run:
+        description: '업로드 없이 대상만 확인'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency: publish-queue
 
 jobs:
   publish:
@@ -12,11 +34,32 @@ jobs:
       with:
         node-version: 20
         cache: 'npm'
+    - name: Install Korean fonts, FFmpeg, edge-tts
+      run: |
+        sudo apt-get update && sudo apt-get install -y ffmpeg fonts-nanum fonts-noto-cjk python3-pip
+        python3 -m pip install --break-system-packages edge-tts || python3 -m pip install edge-tts
     - run: npm ci
     - run: npm run build
-    - name: Upload upload_queue/video.mp4 to YouTube
+    - name: Render queued scripts that have no video yet
+      if: ${{ !inputs.dry_run }}
+      run: |
+        chmod -R +x node_modules/ffmpeg-static node_modules/ffprobe-static || true
+        for d in upload_queue/*/; do
+          [ -f "$d/script.json" ] && [ ! -f "$d/video.mp4" ] && ! grep -qs videoId "$d/meta.json" && node dist/src/render_only.js "${d%/}"
+        done
+        true
+    - name: Upload one queued item to YouTube
       env:
         YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
         YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
         YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-      run: node dist/src/publish_only.js
+        ITEM: ${{ inputs.item }}
+        PRIVACY: ${{ inputs.privacy || 'public' }}
+      run: node dist/src/publish_only.js ${{ inputs.dry_run && '--dry-run' || '' }}
+    - name: Record result (meta.videoId, used_sources.json)
+      if: ${{ !inputs.dry_run }}
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@users.noreply.github.com"
+        git add upload_queue/*/meta.json used_sources.json 2>/dev/null || true
+        git diff --cached --quiet || (git commit -m "chore: record published short" && git push)

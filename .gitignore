@@ -6,3 +6,5 @@ temp_alpha_shorts/
 .cache/
 .env
 *.log
+
+upload_queue/**/video.mp4

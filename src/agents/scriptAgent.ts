@@ -1,19 +1,29 @@
-import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { generateContentWithFallback } from '../geminiHelper';
 import { ContentPlan, FeedbackMemory, ScriptOutput, KatalkMessage } from './types';
 
 dotenv.config();
 
 const DEFAULT_COUPANG_URL = process.env.COUPANG_PARTNERS_URL || 'https://link.coupang.com/a/h183YcFkvA';
 
-const MAX_ATTEMPTS = 3;
-const MIN_MESSAGES = 18;
+export class ScriptRejected extends Error {}
+const MAX_ATTEMPTS = 3; // 최초 1회 + 재시도 2회
+const MIN_MESSAGES = 12;
+const MAX_MESSAGES = 22;
+const MAX_TOTAL_CHARS = 300; // 실측 약 0.115초/글자 -> 35초 이내
+const MAX_CHARS = 30;
 const MIN_PARTICIPANTS = 3; // 'me' 제외 서로 다른 상대 닉네임 수
 const AD_PATTERN = /쿠팡|coupang|파트너스|https?:\/\/|링크|최저가|할인|특가/i;
+const MAX_ME_RATIO = 0.5;
+const MIN_ME_RATIO = 0.3;
+const MAX_AVG_CHARS = 22;
+const MAX_CONSECUTIVE = 2;
+const MAX_REACTION_RATIO = 0.25;
+const REACTION_PATTERN = /^(헐|헉|와|오|엥|아|ㄹㅇ|ㅇㅇ|진짜\??|뭐\??|미쳤다|대박|ㄷㄷ)[ㅋㅎㅠㅜ?!.~\s]*$/;
 // shortcut: 소수 욕설만 마스킹, 목록 확장은 필요할 때
 const PROFANITY_PATTERN = /씨발|시발|ㅅㅂ|ㅆㅂ|병신|ㅂㅅ|지랄|좆|존나|개새끼|새끼|미친놈/g;
 
-function cleanMessages(raw: any): KatalkMessage[] {
+export function cleanMessages(raw: any): KatalkMessage[] {
     if (!Array.isArray(raw)) return [];
     return raw
         .filter((m: any) => m && typeof m.text === 'string' && m.text.trim() && (m.sender === 'me' || m.sender === 'other'))
@@ -25,11 +35,51 @@ function cleanMessages(raw: any): KatalkMessage[] {
         .filter(m => !AD_PATTERN.test(m.text)); // 광고는 고정 댓글로만
 }
 
-function validateMessages(messages: KatalkMessage[]): string | null {
+export function validateMessages(messages: KatalkMessage[]): string | null {
     if (messages.length < MIN_MESSAGES) return `메시지 ${messages.length}개 (<${MIN_MESSAGES})`;
+    if (messages.length > MAX_MESSAGES) return `메시지 ${messages.length}개 (>${MAX_MESSAGES})`;
+    const total = messages.reduce((a, m) => a + m.text.length, 0);
+    if (total > MAX_TOTAL_CHARS) return `전체 ${total}자 (>${MAX_TOTAL_CHARS}자, 영상 약 ${Math.round(total * 0.115)}초): 대사를 더 짧게 줄이거나 줄 수를 줄이기`;
+    const long = messages.find(m => m.text.length > MAX_CHARS);
+    if (long) return `"${long.text.slice(0, 12)}..." ${long.text.length}자 (>${MAX_CHARS}자): 짧게 줄이기`;
     const names = new Set(messages.filter(m => m.sender === 'other').map(m => m.name));
     if (names.size < MIN_PARTICIPANTS) return `상대 닉네임 ${names.size}명 (<${MIN_PARTICIPANTS})`;
+
+    const meCount = messages.filter(m => m.sender === 'me').length;
+    if (meCount / messages.length > MAX_ME_RATIO) return `'나' 비중 ${Math.round(meCount / messages.length * 100)}% (>${MAX_ME_RATIO * 100}%): 독백 금지, 상대들이 더 많이 말해야 함`;
+    for (const n of names) {
+        const c = messages.filter(m => m.name === n).length;
+        if (c < 2) return `상대 "${n}" 발언 ${c}개 (<2): 모든 상대가 최소 2번 이상 말해야 함`;
+    }
+
+    if (meCount / messages.length < MIN_ME_RATIO) return `'나' 비중 ${Math.round(meCount / messages.length * 100)}% (<${MIN_ME_RATIO * 100}%): 나도 대화에 충분히 참여해야 함`;
+    const avg = messages.reduce((a, m) => a + m.text.length, 0) / messages.length;
+    if (avg > MAX_AVG_CHARS) return `평균 ${Math.round(avg)}자 (>${MAX_AVG_CHARS}자): 더 짧은 구어체로`;
+
+    let run = 1;
+    for (let i = 1; i < messages.length; i++) {
+        run = messages[i].name === messages[i - 1].name ? run + 1 : 1;
+        if (run > MAX_CONSECUTIVE) return `"${messages[i].name}"이 ${MAX_CONSECUTIVE}줄 넘게 연속 발언 (${i + 1}번째 줄 근처): 다른 사람이 끼어들어 티키타카로`;
+    }
+
+    const reactions = messages.filter(m => m.text.replace(/[ㅋㅎㅠㅜ?!.~\s]/g, '').length <= 2 || REACTION_PATTERN.test(m.text.trim())).length;
+    if (reactions / messages.length > MAX_REACTION_RATIO) return `단순 반응 줄 ${reactions}/${messages.length} (>${MAX_REACTION_RATIO * 100}%): 정보·웃음·갈등이 있는 대사로 교체`;
     return null;
+}
+
+/** 구조 검증을 통과한 대본에만 1회 호출: 웃김/복선/펀치라인/논란/실명. 호출 자체가 실패하면 구조 검증 결과를 믿고 통과 */
+async function judgeScript(messages: KatalkMessage[]): Promise<string | null> {
+    try {
+        const j = await generateContentWithFallback<any>({
+            responseMimeType: 'application/json', temperature: 0.2,
+            userPrompt: `아래 카톡 대본을 코미디 쇼츠 심사자로서 채점하세요.\n${messages.map(m => `${m.name}: ${m.text}`).join('\n')}\n\nJSON으로만: {"funny":0~10,"punchline":0~10(마지막 줄이 앞 설정에서 자연스럽게 터지는 정도),"twist_setup":true|false(반전의 복선이 앞에 있음),"controversy":true|false(정치·젠더/세대 갈등·비난·성적/폭력/질병 등),"real_names":true|false(실존 인물·업체명),"fix":"가장 큰 문제 한 줄"}`
+        });
+        if (j.funny >= 4 && j.punchline >= 4 && j.twist_setup && !j.controversy && !j.real_names) return null;
+        return `심사 불합격 (웃김 ${j.funny}, 펀치라인 ${j.punchline}, 복선 ${j.twist_setup}, 논란 ${j.controversy}, 실명 ${j.real_names}): ${j.fix}`;
+    } catch (e: any) {
+        console.warn('[ScriptAgent] 심사 호출 실패, 구조 검증만으로 통과:', String(e.message).slice(0, 80));
+        return null;
+    }
 }
 
 function buildPrompt(plan: ContentPlan, feedback: FeedbackMemory): string {
@@ -44,6 +94,11 @@ function buildPrompt(plan: ContentPlan, feedback: FeedbackMemory): string {
 - 줄거리: ${plan.synopsis}
 - 반전 포인트: ${plan.twistPoint}
 
+${plan.sourceText ? `[원문 썰 - 이 줄거리를 따라 각색]:
+${plan.sourceText}
+각색 규칙: 원문이 1인칭 독백/후기여도 반드시 단톡방 대화로 재구성한다. '나'는 사건을 던지는 역할이고, 원문 속 등장인물(가족·친구·동료)을 각각 다른 닉네임의 상대로 만들어 직접 말하게 하며, 상대들이 놀리고 되묻고 맞장구치게 한다. '나'가 3줄 이상 혼자 설명하지 않는다(상대가 끼어들게). 원문의 사건 순서와 웃음 포인트를 유지하되 문장은 그대로 베끼지 말고 카톡 말투로 새로 쓴다. 실명·업체명·지역 등 개인정보는 가상 닉네임/일반명사로 바꾸고, 특정인·집단을 비난하거나 사회적 논란이 될 표현은 순화하거나 뺀다.
+` : ''}
+${plan.freeform ? `[창작 모드 - 원문 없음]: 위 '상황 시드'를 바탕으로 완전히 새로운 설정(인물 관계·구체적 사건·복선·반전)을 직접 만들어라. 한 가지 황당한 상황 + 친구들이 가볍게 놀리는 구조. 실존 인물·연예인·업체·정치·젠더/세대 갈등·성적/폭력/질병 소재 금지.` : ''}
 [피드백 작성 지침]:
 - 약점 회피: ${feedback.weaknessesToAvoid.join(' / ')}
 - 바이럴 훅 규칙: ${feedback.viralHookRules.join(' / ')}
@@ -51,8 +106,9 @@ function buildPrompt(plan: ContentPlan, feedback: FeedbackMemory): string {
 [대본 작성 절대 규칙 - 레퍼런스 바이럴 쇼츠 스타일시트]:
 0. 이야기 품질(가장 중요): 반전은 앞 대사에서 깔아 둔 복선이 있어야 말이 되고, 마지막 펀치라인은 그 반전에서 자연스럽게 나와야 한다. 설정이 모순되면(예: 구매자 사진과 다른 사람이 나왔는데 이유가 억지) 불합격. 한 가지 사건만 다루고, 등장인물 반응("헐", "ㅋㅋㅋ"만 있는 줄)은 전체의 25% 이하. 매 줄이 정보·웃음·갈등 중 하나를 더해야 한다.
    좋은 예(실제 조회수 400만 구조): 친구 "시험 끝나고 니 집에서 술 먹기로 했는데 니도 올래?" → 나 "내집??" → 친구 "ㅇㅇ 니집에서 마실건데" → (사진: 다리 깁스) 나 "아무도 안 믿은거임?" → "차가 날 쳤다고" → "그걸 왜 가만히 있냐 / 피하면 되는걸 / 무빙을 못 치네" → "너희가 사람이냐". 즉 말도 안 되는 상황 하나를 던지고 친구들이 위로 대신 가볍게 놀리는 구조.
-1. 메세지 개수: 20~26개 (한 줄당 1~1.2초, 영상 총 길이 35초 이내가 목표). 18개 미만이면 불합격.
-2. 단톡방 구성: 나(sender "me") 1명 + 상대 2~4명 = 총 3~5명. 상대는 전부 sender "other"이되 name을 서로 다르게, 웃긴 닉네임으로 (예: 화난 어피치, 소심한 네오, 빈털털이 제이지). 최소 3개의 서로 다른 닉네임이 말해야 함.
+1. 메세지 개수: 16~22개, 전체 글자수 합계 280자 이내 (영상 길이 35초 이내 목표, 300자 또는 22줄 초과 시 자동 불합격). 12개 미만이면 불합격.
+2. (검증 기준) '나' 발언은 전체의 50% 이하, 같은 사람 연속 발언 최대 2줄, 상대 각자 최소 2번 발언, 단순 반응("헐","ㅋㅋ") 줄 25% 이하. 어기면 자동 불합격.
+2-1. 단톡방 구성: 나(sender "me") 1명 + 상대 2~4명 = 총 3~5명. 상대는 전부 sender "other"이되 name을 서로 다르게, 웃긴 닉네임으로 (예: 화난 어피치, 소심한 네오, 빈털털이 제이지). 최소 3개의 서로 다른 닉네임이 말해야 함.
 3. 첫 메세지(0~3초)에서 즉시 훅: 질문/제안/폭탄 발언으로 바로 시작. 인사말·상황설명 금지.
 4. 중반에 오해 또는 반전 (예: "진짜임?", "아무도 안 믿은 거임?")을 넣어 대화가 뒤집히게.
 5. 마지막 메세지는 짧은 한마디 펀치라인 한 줄 (예: "너희가 사람이냐", "오케이").
@@ -92,54 +148,61 @@ export async function runScriptAgent(plan: ContentPlan, feedback: FeedbackMemory
     }
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = buildPrompt(plan, feedback);
+        const basePrompt = buildPrompt(plan, feedback);
 
         let parsed: any = {};
         let messages: KatalkMessage[] = [];
+        let prompt = basePrompt;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: { responseMimeType: 'application/json' }
-            });
-            parsed = JSON.parse(response.text || '{}');
+            parsed = await generateContentWithFallback<any>({ userPrompt: prompt, responseMimeType: 'application/json' });
             messages = cleanMessages(parsed.messages);
-            const problem = validateMessages(messages);
+            const problem = validateMessages(messages) ?? (await judgeScript(messages));
             if (!problem) break;
             console.warn(`[ScriptAgent] 검증 실패 (${attempt}/${MAX_ATTEMPTS}): ${problem}`);
+            // 구체적 실패 사유를 모델에 되돌려 재작성
+            prompt = `${basePrompt}\n\n[직전 시도 불합격 사유 - 반드시 고쳐서 처음부터 다시 작성]: ${problem}`;
             messages = [];
         }
-        if (messages.length === 0) messages = getFallbackScript(plan).messages;
+        if (messages.length === 0) {
+            // 출처 글은 억지 백업 대본으로 대체하지 않고 폐기(호출부가 다음 후보로)
+            if (plan.source || plan.freeform || plan.inboxFile) throw new ScriptRejected(`검증 ${MAX_ATTEMPTS}회 실패: ${plan.source?.url ?? plan.key}`);
+            messages = getFallbackScript(plan).messages;
+        }
 
         const hookHeadline = parsed.hookHeadline || `[대참사] ${plan.hookIdea}`;
         const ctaQuiz = parsed.ctaQuiz || 'Q. 여러분이라면 이 상황에서 어떻게 하시겠습니까? 댓글로 투표해주세요!';
+        const videoTitle = plan.freeform ? hookHeadline.replace(/^[^가-힣A-Za-z0-9]+/, "") : plan.title; // 창작 모드의 plan.title은 상황 시드라 헤드라인을 제목으로
         const coupangMention = parsed.coupangProductMention || `영상 속 멘탈 회복 꿀템 (${plan.coupangKeyword})`;
 
+        const sourceCredit = plan.source ? `※ 출처: ${plan.source.site} 「${plan.source.title}」 ${plan.source.url}\n(원문을 카톡 형식으로 각색했습니다)` : undefined;
+
         // 고정 댓글 문구 (쿠팡 파트너스 링크 + 필수 공정위 문구)
-        const coupangComment = `👇 ${coupangMention} 특가 보러가기:\n🔗 ${DEFAULT_COUPANG_URL}\n\n※ 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.`;
+        const coupangComment = (sourceCredit ? sourceCredit + '\n\n' : '') + `👇 ${coupangMention} 특가 보러가기:\n🔗 ${DEFAULT_COUPANG_URL}\n\n※ 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.`;
+
 
         // 유튜브 영상 설명
-        const youtubeDescription = `${plan.title}\n\n${ctaQuiz}\n\n━━━━━━━━━━━━━━━━━━━━\n🛒 화제의 추천 아이템 (${plan.coupangKeyword})\n👉 ${DEFAULT_COUPANG_URL}\n\n(이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.)\n━━━━━━━━━━━━━━━━━━━━\n\n#Shorts #카톡썰 #유머 #레전드썰 #${plan.category.replace(/[^가-힣a-zA-Z]/g, '')}`;
+        const youtubeDescription = `${videoTitle}\n\n${ctaQuiz}\n\n${sourceCredit ? sourceCredit + '\n\n' : ''}━━━━━━━━━━━━━━━━━━━━\n🛒 화제의 추천 아이템 (${plan.coupangKeyword})\n👉 ${DEFAULT_COUPANG_URL}\n\n(이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.)\n━━━━━━━━━━━━━━━━━━━━\n\n#Shorts #카톡썰 #유머 #레전드썰 #${plan.category.replace(/[^가-힣a-zA-Z]/g, '')}`;
 
         const tags = ['Shorts', '카톡썰', '유머', '레전드썰', '썰', plan.category, plan.coupangKeyword];
 
         const scriptOutput: ScriptOutput = {
             planId: plan.id,
-            title: `${plan.title} #Shorts`,
+            title: `${videoTitle} #Shorts`,
             hookHeadline,
             messages,
             ctaQuiz,
             coupangComment,
             coupangKeyword: plan.coupangKeyword,
             youtubeDescription,
-            tags
+            tags,
+            sourceCredit
         };
 
         console.log(`[ScriptAgent] ✅ 대본 작성 완수! (톡 ${messages.length}개, 배너: "${hookHeadline}")`);
         return scriptOutput;
 
     } catch (err: any) {
+        if (err instanceof ScriptRejected) throw err;
         console.warn('[ScriptAgent] 대본 생성 실패로 안전 백업 대본 사용:', err.message);
         return getFallbackScript(plan);
     }

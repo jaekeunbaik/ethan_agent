@@ -53,6 +53,9 @@ export async function runFeedbackAgent(): Promise<FeedbackMemory> {
         }
     }
 
+    // 테스트 하네스용: 외부 호출/파일 쓰기 없이 기존 메모리만 사용
+    if (process.env.SKIP_FEEDBACK === '1') { console.log('[FeedbackAgent] SKIP_FEEDBACK=1: 기존 메모리 사용, 파일 쓰기 없음'); return currentMemory; }
+
     // 2. 실시간 유튜브 지표 수집
     let metrics: ChannelMetrics | null = null;
     try {

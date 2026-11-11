@@ -2,7 +2,9 @@ import { runFeedbackAgent } from './feedbackAgent';
 import { runPlannerAgent } from './plannerAgent';
 import { runScriptAgent } from './scriptAgent';
 import { runDesignerAgent } from './designerAgent';
-import { runPublisherAgent } from './publisherAgent';
+import { ScriptRejected } from './scriptAgent';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
 import { sendDiscordReport } from '../discordNotifier';
 
 /**
@@ -27,28 +29,41 @@ export async function executeMultiAgentShortsFactory(): Promise<void> {
 
         // [2단계] 🧠 기획 에이전트
         console.log('\n2️⃣ [Phase 2/5] PlannerAgent 가동...');
-        const plan = await runPlannerAgent(feedback);
-
-        // [3단계] ✍️ 대본/카피 에이전트
-        console.log('\n3️⃣ [Phase 3/5] ScriptAgent 가동...');
-        const script = await runScriptAgent(plan, feedback);
+        // 대본 검증 3회 실패 시 그 글은 폐기하고 다음 후보로 (최대 3글). 후보가 없으면 NoCandidates로 중단
+        const skipIds: string[] = [];
+        let plan: Awaited<ReturnType<typeof runPlannerAgent>> | undefined;
+        let script: Awaited<ReturnType<typeof runScriptAgent>> | undefined;
+        for (let n = 0; n < 3 && !script; n++) {
+            plan = await runPlannerAgent(feedback, skipIds);
+            console.log('\n3️⃣ [Phase 3/5] ScriptAgent 가동...');
+            try { script = await runScriptAgent(plan, feedback); }
+            catch (e: any) { if (!(e instanceof ScriptRejected) || !(plan.source || plan.key)) throw e; console.warn(`[Orchestrator] ${e.message} → 다음 후보`); skipIds.push(plan.key ?? plan.source!.id); }
+        }
+        if (!plan || !script) throw new Error('대본 검증을 통과한 글이 없어 중단');
 
         // [4단계] 🎨 디자인/렌더링 에이전트
         console.log('\n4️⃣ [Phase 4/5] DesignerAgent 가동...');
         const render = await runDesignerAgent(script);
 
-        // [5단계] 🛒 배포 & 쿠팡 수익화 에이전트
-        console.log('\n5️⃣ [Phase 5/5] PublisherAgent 가동...');
-        const publishResult = await runPublisherAgent(script, render);
+        // [5단계] 업로드는 GitHub Actions(publish_only)에서만: 큐에 넣고 사람이 검수 후 업로드
+        console.log('\n5️⃣ [Phase 5/5] 업로드 큐 적재 (업로드는 Actions에서)...');
+        // 중복 방지 키: pann 글 id / free:<테마>:<헤드라인 해시> / inbox:<파일명>
+        const hash = crypto.createHash('md5').update(script.hookHeadline).digest('hex').slice(0, 8);
+        const sourceId = plan.source?.id ?? (plan.freeform ? `free:${plan.key}:${hash}` : plan.inboxFile ? `inbox:${plan.key}` : undefined);
+        const slug = `${new Date().toISOString().slice(0, 10)}_${plan.key ?? plan.source?.id ?? plan.id}`;
+        const dir = `upload_queue/${slug}`;
+        fs.mkdirSync(dir, { recursive: true });
+        fs.copyFileSync(render.videoPath, `${dir}/video.mp4`);
+        fs.writeFileSync(`${dir}/script.json`, JSON.stringify(script, null, 1), 'utf8');
+        fs.writeFileSync(`${dir}/meta.json`, JSON.stringify({ sourceId, sourceUrl: plan.source?.url, createdAt: new Date().toISOString(), approved: false }, null, 1), 'utf8');
 
         const elapsedSec = Math.round((Date.now() - startTime) / 1000);
 
         console.log('\n🎉 ======================================================================');
         console.log(`✨ [성공] 멀티 서브에이전트 파이프라인 전 과정 완수! (소요 시간: ${elapsedSec}초)`);
         console.log(`📁 완성 비디오: ${render.videoPath}`);
-        if (publishResult.videoUrl) {
-            console.log(`📺 유튜브 쇼츠 URL: ${publishResult.videoUrl}`);
-        }
+        if (plan.inboxFile) { fs.mkdirSync('inbox/done', { recursive: true }); fs.renameSync(plan.inboxFile, `inbox/done/${plan.key}`); }
+        console.log(`📦 큐: ${dir}`);
         console.log('======================================================================\n');
 
         // 디스코드 리포트 발송
@@ -58,7 +73,7 @@ export async function executeMultiAgentShortsFactory(): Promise<void> {
                 threadsPostId: null,
                 mytiThreadsPostId: null,
                 instagramPostId: null,
-                youtubeShortsUrl: publishResult.videoUrl || `로컬 생성: ${render.videoPath}`,
+                youtubeShortsUrl: `큐 대기: ${dir}`,
                 publicImageUrls: [],
                 status: 'SUCCESS'
             });

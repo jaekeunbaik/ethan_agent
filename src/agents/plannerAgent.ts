@@ -1,7 +1,11 @@
 import Parser from 'rss-parser';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import * as fs from 'fs';
 import { FeedbackMemory, ContentPlan } from './types';
+import { fetchPannCandidates } from '../pannFetcher';
+import { generateContentWithFallback } from '../geminiHelper';
+import { filterStories, keywordReject } from '../storyFilter';
 
 dotenv.config();
 
@@ -47,13 +51,129 @@ const BACKUP_VIRAL_STORIES = [
     }
 ];
 
+
+const USED_SOURCES_FILE = 'used_sources.json';
+
+export class NoCandidates extends Error {}
+
+// 원문 없는 창작용 일상 상황 시드 (최근 사용분은 피해서 순환). [상황, 쿠팡 키워드]
+const THEMES: [string, string][] = [
+    ['엄마가 내 물건을 허락 없이 당근에 팔아버림', '자취 꿀템 정리함'],
+    ['단톡방에 보낼 험담 톡을 당사자가 있는 방에 잘못 보냄', '눈마사지기'],
+    ['친구가 약속 시간에 늦으면서 점점 황당한 핑계를 댐', '보조배터리'],
+    ['치킨 시켰는데 누가 먹었는지 가족 수사가 시작됨', '치킨 무'],
+    ['다이어트 선언한 친구가 단톡방에 몰래 야식 인증샷을 올림', '다이어트 도시락'],
+    ['시험 전날 친구들이 서로 공부 안 했다고 거짓말 경쟁', '형광펜 세트'],
+    ['아빠가 카톡 프사를 이상한 걸로 바꿔서 가족방이 난리남', '스마트폰 거치대'],
+    ['동생이 내 이름으로 배달 시키고 안 갚음', '배달 보온백'],
+    ['모임 장소 정하는데 아무도 결정을 못 하고 서로 미룸', '휴대용 선풍기'],
+    ['자취방 보일러 고장 났다고 했더니 친구들이 훈수만 둠', '핫팩'],
+    ['친구 생일 선물을 서로 안 겹치게 하려다 다 같은 걸 삼', '선물 포장지'],
+    ['엄마가 이모티콘을 잘못 눌러서 이상한 분위기가 됨', '이모티콘 키보드'],
+    ['친구가 여행 계획을 세워왔는데 일정이 전부 먹는 것뿐임', '여행용 파우치'],
+    ['룸메이트가 냉장고 음식에 이름표를 붙이기 시작함', '밀폐용기 세트'],
+    ['알람 10개 맞췄는데 다 못 듣고 지각해서 변명 회의 중', '무소음 알람시계']
+];
+
+function usedThemeIdx(): number[] {
+    const used: string[] = fs.existsSync(USED_SOURCES_FILE) ? JSON.parse(fs.readFileSync(USED_SOURCES_FILE, 'utf8')) : [];
+    return [...used, ...queuedSourceIds()].filter(x => x.startsWith('free:')).map(x => Number(x.split(':')[1]));
+}
+
+/** 원문 없는 기본 경로: 아직 안 쓴 테마 하나를 골라 대본 단계에서 새 설정을 창작하게 함 (Gemini 호출 없음) */
+function planFreeform(feedback: FeedbackMemory, skipIds: string[]): ContentPlan {
+    const recent = new Set([...usedThemeIdx().slice(-(THEMES.length - 3)), ...skipIds.map(Number)]);
+    const open = THEMES.map((_, i) => i).filter(i => !recent.has(i));
+    if (open.length === 0) throw new NoCandidates('쓸 수 있는 테마가 없음');
+    const i = open[Math.floor(Math.random() * open.length)];
+    const [theme, kw] = THEMES[i];
+    return {
+        id: `plan_${Date.now()}`, title: theme, category: '가족/친구', hookIdea: '첫 메세지부터 황당한 상황 투척',
+        synopsis: `상황 시드: ${theme}`, twistPoint: '복선을 깔고 마지막에 어이없는 반전',
+        coupangProductCategory: '생활 꿀템', coupangKeyword: kw,
+        appliedFeedbackRules: feedback.successfulPatterns.slice(0, 2), freeform: true, key: String(i)
+    };
+}
+
+/** inbox/*.txt 중 가장 오래된 파일을 각색 원문으로 사용 (이든이 직접 넣은 글) */
+function blocked(n: string): boolean {
+    const t = fs.readFileSync(`inbox/${n}`, 'utf8');
+    const why = keywordReject(t.split('\n')[0], t);
+    if (why) console.warn(`[PlannerAgent] inbox/${n} 제외: ${why}`);
+    return !!why;
+}
+
+function planFromInbox(feedback: FeedbackMemory, skipIds: string[]): ContentPlan | null {
+    if (!fs.existsSync('inbox')) return null;
+    const f = fs.readdirSync('inbox').filter(n => n.endsWith('.txt') && !skipIds.includes(n) && !blocked(n))
+        .sort((a, b) => fs.statSync(`inbox/${a}`).mtimeMs - fs.statSync(`inbox/${b}`).mtimeMs)[0];
+    if (!f) return null;
+    const text = fs.readFileSync(`inbox/${f}`, 'utf8').trim().slice(0, 2500);
+    const title = text.split('\n')[0].slice(0, 60);
+    return {
+        id: `plan_${Date.now()}`, title, category: '가족/친구', hookIdea: '원문 속 가장 황당한 순간으로 시작',
+        synopsis: text.slice(0, 200), twistPoint: '원문 속 반전/웃음 포인트', coupangProductCategory: '생활 꿀템', coupangKeyword: '자취 필수템',
+        appliedFeedbackRules: feedback.successfulPatterns.slice(0, 2), sourceText: text, key: f, inboxFile: `inbox/${f}`
+    };
+}
+
+/** 큐(upload_queue 하위 meta.json)에 이미 들어간 원문 id: 업로드 전이라도 재선정 방지 */
+function queuedSourceIds(): string[] {
+    const dir = 'upload_queue';
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).flatMap(d => {
+        try { return [JSON.parse(fs.readFileSync(`${dir}/${d}/meta.json`, 'utf8')).sourceId as string]; } catch { return []; }
+    }).filter(Boolean);
+}
+
+/** 네이트판 글을 storyFilter(키워드+LLM 안전/재미 점수)로 거른 뒤 1등을 기획서로 변환. 통과 글이 없으면 NoCandidates */
+async function planFromPann(feedback: FeedbackMemory, skipIds: string[]): Promise<ContentPlan> {
+    const used: string[] = fs.existsSync(USED_SOURCES_FILE) ? JSON.parse(fs.readFileSync(USED_SOURCES_FILE, 'utf8')) : [];
+    const stories = await fetchPannCandidates([...used, ...queuedSourceIds(), ...skipIds]);
+    const { passed, rejected } = await filterStories(stories);
+    rejected.forEach(r => console.log(`[PlannerAgent] 탈락 ${r.id}: ${r.reason}`));
+    if (passed.length === 0) throw new NoCandidates(`통과 글 없음 (후보 ${stories.length}개)`);
+    const picked = passed[0].story;
+    console.log(`[PlannerAgent] 선정(재미 ${passed[0].score}/10): ${picked.title}`);
+    {
+        const p = await generateContentWithFallback<any>({
+            responseMimeType: 'application/json',
+            userPrompt: `아래 커뮤니티 글을 카톡 대화 쇼츠(35초)로 각색할 기획서로 정리하세요.
+
+제목: ${picked.title}
+${picked.text}
+
+JSON으로만 응답:
+{"title": "영상 제목(원문 문장 그대로 쓰지 말 것)", "category": "직장/알바"|"당근/중고거래"|"연애/소개팅"|"가족/친구"|"황당실수", "hookIdea": "첫 메세지 훅", "synopsis": "원문 줄거리를 따르는 2문장 요약 (인물은 웃긴 닉네임으로)", "twistPoint": "원문 속 반전/웃음 포인트", "coupangProductCategory": "연관 상품 카테고리", "coupangKeyword": "쿠팡 검색 키워드"}`
+        });
+        console.log(`[PlannerAgent] 📰 출처: 네이트판 「${picked.title}」 ${picked.url}`);
+        return {
+            id: `plan_${Date.now()}`,
+            title: p.title, category: p.category, hookIdea: p.hookIdea, synopsis: p.synopsis, twistPoint: p.twistPoint,
+            coupangProductCategory: p.coupangProductCategory || '생활 필수 꿀템',
+            coupangKeyword: p.coupangKeyword || '자취 필수템',
+            appliedFeedbackRules: feedback.successfulPatterns.slice(0, 2),
+            source: { site: picked.site, title: picked.title, url: picked.url, id: picked.id },
+            sourceText: picked.text
+        };
+    }
+}
+
 /**
  * 🧠 PlannerAgent (기획 에이전트)
  * - 커뮤니티 썰 트렌드 수집 및 이전 영상의 FeedbackMemory(성공패턴, 약점)를 주입받아
  * - 이번 쇼츠의 타깃 주제, 후킹 포인트, 쿠팡 파트너스 연계 상품군을 완벽 기획
  */
-export async function runPlannerAgent(feedback: FeedbackMemory): Promise<ContentPlan> {
+export async function runPlannerAgent(feedback: FeedbackMemory, skipIds: string[] = []): Promise<ContentPlan> {
     console.log('\n[🧠 PlannerAgent] 도파민 유머 썰 기획 및 쿠팡 상품 매칭 시작...');
+
+    // 우선순위: inbox 글 > (PANN_INSPIRATION=1일 때만) 네이트판 > 원문 없는 창작. GEMINI 키가 없는 환경만 아래 구형 경로
+    if (process.env.GEMINI_API_KEY) {
+        const inbox = planFromInbox(feedback, skipIds);
+        if (inbox) return inbox;
+        if (process.env.PANN_INSPIRATION === '1') return planFromPann(feedback, skipIds);
+        return planFreeform(feedback, skipIds);
+    }
 
     // 1. 실시간 썰 크롤링 시도
     let fetchedRawStory = '';

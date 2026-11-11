@@ -18,6 +18,11 @@ export interface ContentPlan {
     coupangProductCategory: string;
     coupangKeyword: string;
     appliedFeedbackRules: string[];
+    source?: { site: string; title: string; url: string; id: string }; // 원문 출처
+    sourceText?: string; // 각색 기준이 되는 원문
+    freeform?: boolean; // 원문 없이 theme 기반으로 대본 단계에서 새 설정 창작
+    key?: string; // freeform: 테마 번호, inbox: 파일명 (중복/폐기 추적용)
+    inboxFile?: string; // inbox/*.txt 경로
 }
 
 export interface KatalkMessage {
@@ -36,6 +41,7 @@ export interface ScriptOutput {
     coupangKeyword?: string; // 화면 뱃지 표시용 쿠팡 키워드
     youtubeDescription: string;
     tags: string[];
+    sourceCredit?: string; // 출처 표기 문구
 }
 
 export interface RenderOutput {
