@@ -114,19 +114,22 @@ function stripEmojis(text: string): string {
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
     const clean = stripEmojis(text);
     if (!clean) return [];
-    const words = clean.split(' ');
     const lines: string[] = [];
-    let currentLine = words[0] || '';
-    for (let i = 1; i < words.length; i++) {
-        const word = words[i];
-        if (ctx.measureText(currentLine + ' ' + word).width < maxWidth) {
-            currentLine += ' ' + word;
-        } else {
-            lines.push(currentLine);
-            currentLine = word;
+    // 명시적 줄바꿈(\n)은 그대로 줄을 나누고, 각 줄 안에서 폭에 맞게 다시 감싼다
+    for (const para of clean.split('\n')) {
+        const words = para.split(' ').filter(Boolean);
+        let currentLine = words[0] || '';
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            if (ctx.measureText(currentLine + ' ' + word).width < maxWidth) {
+                currentLine += ' ' + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
         }
+        if (currentLine) lines.push(currentLine);
     }
-    lines.push(currentLine);
     return lines;
 }
 
