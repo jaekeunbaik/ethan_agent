@@ -17,6 +17,14 @@
   { "id": "basic-pension", "title": "기초연금 신청 대상과 방법", "window": [], "audience": "65세 이상·자녀", "official": ["https://www.bokjiro.go.kr", "https://www.nps.or.kr"] },
   { "id": "nps-check", "title": "국민연금 예상 수령액 조회와 추납", "window": [], "audience": "직장인", "official": ["https://www.nps.or.kr"] },
   { "id": "document-online", "title": "주민등록등본 등 서류 온라인 발급 주의사항", "window": [], "audience": "전체", "official": ["https://www.gov.kr"] },
+  { "id": "jongbu-tax-dec", "title": "종합부동산세 고지·납부와 분납 체크", "window": [11, 12], "audience": "주택 보유자", "official": ["https://www.nts.go.kr", "https://www.hometax.go.kr"] },
+  { "id": "property-tax", "title": "재산세 납부 기간과 납부 방법", "window": [7, 9], "audience": "주택·토지 보유자", "official": ["https://www.wetax.go.kr"] },
+  { "id": "subscription-basics", "title": "청약 1순위 조건과 청약통장 체크", "window": [], "audience": "무주택자·청년", "official": ["https://www.applyhome.co.kr", "https://www.myhome.go.kr"] },
+  { "id": "jeonse-fraud-check", "title": "전세 계약 전 사기 예방 체크리스트", "window": [], "audience": "세입자", "official": ["https://www.khug.or.kr", "https://www.molit.go.kr", "https://www.iros.go.kr"] },
+  { "id": "jeonse-guarantee", "title": "전세보증금 반환보증 가입 조건과 방법", "window": [], "audience": "세입자", "official": ["https://www.khug.or.kr", "https://www.hf.go.kr"] },
+  { "id": "youth-rent-support", "title": "청년 월세 지원 대상과 신청 방법", "window": [], "audience": "청년 세입자", "official": ["https://www.myhome.go.kr", "https://www.bokjiro.go.kr"] },
+  { "id": "beotimmok-loan", "title": "버팀목 전세자금대출 조건 한눈에", "window": [], "audience": "무주택 세입자", "official": ["https://nhuf.molit.go.kr"] },
+  { "id": "move-in-report", "title": "이사 후 전입신고·확정일자 받는 법", "window": [], "audience": "세입자", "official": ["https://www.gov.kr", "https://www.iros.go.kr"] },
   { "id": "g2b-first-bid", "title": "나라장터 입찰 처음 참여하는 사업자 체크리스트", "window": [], "audience": "소상공인·사업자", "official": ["https://www.g2b.go.kr"], "edenbid": true }
  ]
 }
