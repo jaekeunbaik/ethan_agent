@@ -1,0 +1,36 @@
+name: Blogger Publish
+
+on:
+  # 08~21시 KST 매시: 기한 지난 초안 발행 + 새 초안 업로드 (local-blogger/blogger.mjs)
+  schedule:
+    - cron: '0 23,0-12 * * *'
+  workflow_dispatch:
+
+concurrency: blogger
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Publish
+      env:
+        GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        BLOGGER_REFRESH_TOKEN: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
+        BLOGGER_BLOG_ID: ${{ secrets.BLOGGER_BLOG_ID }}
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      run: node local-blogger/blogger.mjs
+    - name: Save state
+      if: always()
+      run: |
+        git diff --quiet local-blogger/state.json && exit 0
+        git config user.name github-actions && git config user.email github-actions@users.noreply.github.com
+        git add local-blogger/state.json && git commit -qm "chore(blog): blogger state [skip ci]"
+        git pull --rebase -q origin master && git push -q origin HEAD:master

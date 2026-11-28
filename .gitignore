@@ -11,5 +11,4 @@ upload_queue/**/video.mp4
 
 sns_cleanup_list.json
 
-local-blogger/state.json
 local-blogger/run.log

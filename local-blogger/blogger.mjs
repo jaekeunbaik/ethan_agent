@@ -1,6 +1,6 @@
 // 블로그 초안을 Blogger(공식 API)에 초안으로 올림 → 1시간 동안 사람이 막지 않으면(초안 삭제) 자동 공개 발행.
 //   node blogger.mjs --login   처음 1회: 브라우저에서 Google 로그인 → refresh token 저장 (의존성 없음)
-//   node blogger.mjs           기한 지난 초안 발행 + 새 초안 1개 업로드 (작업 스케줄러가 매시 실행)
+//   node blogger.mjs           기한 지난 초안 발행 + 새 초안 1개 업로드 (.github/workflows/blogger.yml 이 매시 실행)
 //   옵션: --slug <폴더명> 특정 초안 업로드, --hold <분> 자동 발행 대기시간 변경 (테스트용)
 // 필요한 .env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (Google Cloud의 "데스크톱 앱" OAuth 클라이언트)
 import os from 'os';
@@ -18,7 +18,10 @@ const API = 'https://www.googleapis.com/blogger/v3';
 const arg = (n) => process.argv.includes(`--${n}`);
 const argVal = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
 
+// GitHub Actions에서는 Secrets(환경변수), PC에서는 .env
 function env(key) {
+  if (process.env[key]) return process.env[key];
+  if (!fs.existsSync(path.join(REPO, '.env'))) return '';
   const line = fs.readFileSync(path.join(REPO, '.env'), 'utf8').split(/\r?\n/).find((l) => l.startsWith(`${key}=`));
   return line ? line.slice(key.length + 1).trim().replace(/^"|"$/g, '') : '';
 }
@@ -36,12 +39,14 @@ async function tokenCall(params) {
   return r.json();
 }
 
+const refreshToken = () => env('BLOGGER_REFRESH_TOKEN') || (fs.existsSync(TOKEN) ? JSON.parse(fs.readFileSync(TOKEN, 'utf8')).refresh_token : '');
 class LoginError extends Error {}
 let access;
 async function api(method, p, body) {
   if (!access) {
-    if (!fs.existsSync(TOKEN)) throw new LoginError('token 없음');
-    const t = await tokenCall({ grant_type: 'refresh_token', refresh_token: JSON.parse(fs.readFileSync(TOKEN, 'utf8')).refresh_token });
+    const rt = refreshToken();
+    if (!rt) throw new LoginError('token 없음');
+    const t = await tokenCall({ grant_type: 'refresh_token', refresh_token: rt });
     if (!t.access_token) throw new LoginError(JSON.stringify(t)); // invalid_grant = 토큰 만료/취소 → --login 다시
     access = t.access_token;
   }
@@ -93,9 +98,9 @@ function readPost(slug) {
 if (arg('login')) {
   await login();
 } else {
-  const LOGIN_MSG = 'PC의 C:\\ethan\\git\\ethan_agent\\local-blogger 에서 node blogger.mjs --login 실행 필요 (또는 Claude에게 "블로거 로그인 다시")';
+  const LOGIN_MSG = 'PC의 local-blogger 에서 node blogger.mjs --login 후 GitHub Secret BLOGGER_REFRESH_TOKEN 갱신 필요 (Claude에게 "블로거 로그인 다시")';
   const BLOG = env('BLOGGER_BLOG_ID');
-  if (!fs.existsSync(TOKEN) || !BLOG) { console.log('아직 --login / BLOGGER_BLOG_ID 설정 전 → 아무것도 안 함'); process.exit(0); }
+  if (!refreshToken() || !BLOG) { console.log('아직 --login / BLOGGER_BLOG_ID 설정 전 → 아무것도 안 함'); process.exit(0); }
   const HOLD_MIN = Number(argVal('hold') ?? 55);
   try { execSync('git pull --rebase --autostash -q origin master', { cwd: REPO, stdio: 'inherit' }); } catch { console.warn('git pull 실패, 로컬 상태로 진행'); }
   const st = loadState();
