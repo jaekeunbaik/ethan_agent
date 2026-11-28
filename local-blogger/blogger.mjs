@@ -64,6 +64,7 @@ async function login() {
   execSync(`start "" "${url}"`, { shell: 'cmd.exe' });
   const code = await new Promise((ok, no) => srv.on('request', (req, res) => {
     const q = new URL(req.url, redirect).searchParams;
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end(q.get('code') ? '로그인 완료. 이 창을 닫으세요.' : `실패: ${q.get('error')}`);
     q.get('code') ? ok(q.get('code')) : no(new Error(q.get('error') || 'no code'));
   }));
@@ -74,7 +75,7 @@ async function login() {
   fs.writeFileSync(TOKEN, JSON.stringify({ refresh_token: t.refresh_token }));
   const blogs = (await api('GET', '/users/self/blogs'))?.items || [];
   console.log('토큰 저장 완료. 내 블로그:\n' + blogs.map((b) => `  ${b.id}  ${b.name}  ${b.url}`).join('\n'));
-  console.log('위 id를 .env 의 BLOGGER_BLOG_ID= 에 넣으세요.');
+  console.log(blogs.length ? '위 id를 .env 의 BLOGGER_BLOG_ID= 에 넣으세요.' : '⚠️ 이 Google 계정에는 관리 중인 블로그가 없습니다. 블로그 관리자 계정으로 --login 다시 하세요.');
 }
 
 function loadState() { return fs.existsSync(STATE) ? JSON.parse(fs.readFileSync(STATE, 'utf8')) : { drafted: {}, published: [] }; }
