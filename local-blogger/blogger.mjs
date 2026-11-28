@@ -111,6 +111,19 @@ if (arg('login')) {
       saveState(st);
     }
 
+    // 애드센스 신청 시점 알림 (1회): 공개 글 20개 이상 + 첫 글 후 30일 이상 (흔히 승인되는 최소선)
+    if (!st.adsenseNotified) {
+      const live = await api('GET', `/blogs/${BLOG}/posts?status=LIVE&maxResults=500&fetchBodies=false&fields=items(published)`);
+      const dates = (live?.items || []).map((x) => Date.parse(x.published));
+      const days = dates.length ? (Date.now() - Math.min(...dates)) / 86400000 : 0;
+      console.log(`애드센스 체크: 공개 글 ${dates.length}개, 운영 ${Math.floor(days)}일`);
+      if (dates.length >= 20 && days >= 30) {
+        await notify(`💰 애드센스 신청해도 좋을 시점이에요 (공개 글 ${dates.length}개, 운영 ${Math.floor(days)}일).\nBlogger → 수익 창출 → AdSense 신청. 신청 전 확인: 메뉴에 소개·문의·개인정보처리방침 노출, 각 글에 직접 쓴 의견 2~3줄.`);
+        st.adsenseNotified = true;
+        saveState(st);
+      }
+    }
+
     const q = path.join(REPO, 'blog_queue');
     const known = new Set([...Object.keys(st.drafted), ...st.published]);
     const slug = argVal('slug') || fs.readdirSync(q).sort().find((x) => !known.has(x) && fs.existsSync(path.join(q, x, 'post.html')));
