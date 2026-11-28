@@ -24,7 +24,7 @@ jobs:
           unv=$(jq -r '(.unverified // []) | length' "$d/meta.json" 2>/dev/null)
           msg="📝 블로그 초안 도착: ${title}
         미확인 항목: ${unv:-?}개
-        글(Raw 복사용): https://raw.githubusercontent.com/${REPO}/master/${f}
+        글(Raw 복사용, 티스토리 'HTML 모드'에 붙여넣기 — 기본 에디터에 붙이면 링크 깨짐): https://raw.githubusercontent.com/${REPO}/master/${f}
         메타: https://github.com/${REPO}/blob/master/${d}/meta.json
         카드뉴스 승인(approved:true로 수정): https://github.com/${REPO}/edit/master/sns_queue/${slug}/card.json"
           jq -n --arg c "$msg" '{content:$c}' | curl -sS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"
