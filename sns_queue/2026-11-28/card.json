@@ -1,0 +1,17 @@
+{
+ "topic": "에너지바우처 신청 마감 12월 31일",
+ "approved": false,
+ "sources": [
+  "https://www.bokjiro.go.kr/ssis-tbu/cms/pc/customer/notice/1309896_1141.html",
+  "https://www.korea.kr/news/policyNewsView.do?newsId=148966678",
+  "https://www.energyv.or.kr/info/support_info.do"
+ ],
+ "thread_text": "에너지바우처 신청 마감이 12월 31일이에요.\n\n1. 수급 가구이면서 노인, 영유아, 장애인 등 세대원 조건 해당\n2. 올해 지원금은 1인 295,200원 ~ 4인 이상 701,300원\n3. 주민센터 방문 또는 복지로에서 신청\n\n연말에는 신청이 잠시 멈출 수 있어 미리 하는 게 좋아요.\n\n자세한 일정과 방법은 프로필 링크 블로그에",
+ "insta_caption": "에너지바우처 신청 마감은 12월 31일입니다. 대상 여부와 신청 방법을 블로그에 정리했어요. 최종 확인은 주민센터나 복지로에서 해주세요.\n\n#에너지바우처 #생활정보 #정부지원 #복지로 #난방비 #겨울준비",
+ "slides": [
+  { "slideNumber": 1, "type": "COVER", "title": "에너지바우처\n신청 마감 12월 31일", "subtitle": "대상과 신청 방법 정리", "contentLines": ["올해 안에 꼭 신청하세요"] },
+  { "slideNumber": 2, "type": "BODY", "title": "이런 세대가 대상이에요", "contentLines": ["생계·의료·주거·교육급여 수급 세대", "노인·영유아·장애인·임산부 등", "한부모·다자녀 세대도 해당", "두 조건을 모두 충족해야 해요"], "highlightText": "두 조건 모두 충족" },
+  { "slideNumber": 3, "type": "BODY", "title": "지원금은 얼마인가요", "contentLines": ["1인 세대 295,200원", "2인 세대 407,500원", "3인 세대 532,700원", "4인 이상 701,300원"], "highlightText": "올해 전체 금액(월 금액 아님)" },
+  { "slideNumber": 4, "type": "CTA", "title": "자세한 방법은 블로그에", "subtitle": "저장해두고 필요할 때 꺼내 보세요", "contentLines": ["신청 장소와 단계별 방법", "사용 기간과 사용처", "중복 지원 주의사항"] }
+ ]
+}

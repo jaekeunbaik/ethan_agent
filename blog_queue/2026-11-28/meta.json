@@ -1,0 +1,17 @@
+{
+ "topicId": "energy-voucher",
+ "title": "에너지바우처 신청 마감 12월 31일, 대상과 신청 방법 총정리 (2026)",
+ "createdAt": "2026-11-28",
+ "deadline": "2026-12-31",
+ "sources": [
+  "https://www.bokjiro.go.kr/ssis-tbu/cms/pc/customer/notice/1309896_1141.html",
+  "https://www.korea.kr/news/policyNewsView.do?newsId=148966678",
+  "https://www.energyv.or.kr/info/support_info.do"
+ ],
+ "unverified": [
+  "연말 신청 일시 중단 정확한 날짜(누리집에는 12월 말 2~3일로만 표기)",
+  "연탄전환 에너지바우처 신청 시작일(자료마다 7월/8월 3일/8월 7일로 상이해 본문에서 제외)",
+  "신청 시점 기준 실제 잔여 신청 가능 여부(복지로 공지 게시일 6/11 기준)"
+ ],
+ "selfCheck": "마감일·대상·금액·신청처·사용기간·중복불가 모두 복지로/정책브리핑/에너지바우처 누리집에 근거; 연탄전환 관련 불일치 정보는 본문 제외; 자격 판단은 주민센터 확인 안내 포함."
+}
