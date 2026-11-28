@@ -1,0 +1,22 @@
+{
+ "_note": "시기별 주제 후보. window는 '보통 이 시기'라는 대략값일 뿐이며, 날짜·금액·대상은 매번 official 출처에서 그 해 기준으로 확인한다. 확인 못 한 항목은 글에 쓰지 않는다.",
+ "topics": [
+  { "id": "yearend-preview", "title": "연말정산 미리보기로 남은 공제 채우기", "window": [11, 12], "audience": "직장인", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "pension-saving-dec", "title": "연금저축·IRP 연말 납입 세액공제", "window": [11, 12], "audience": "직장인", "official": ["https://www.nts.go.kr", "https://www.fss.or.kr"] },
+  { "id": "donation-deduction", "title": "연말 기부금 세액공제와 영수증 챙기기", "window": [12], "audience": "직장인", "official": ["https://www.nts.go.kr", "https://www.hometax.go.kr"] },
+  { "id": "energy-voucher", "title": "에너지바우처 신청 대상과 마감", "window": [11, 12], "audience": "취약계층 가구", "official": ["https://www.energyv.or.kr", "https://www.bokjiro.go.kr"] },
+  { "id": "new-year-changes", "title": "새해 달라지는 제도 생활 편", "window": [12, 1], "audience": "전체", "official": ["https://www.korea.kr"] },
+  { "id": "car-tax-annual", "title": "자동차세 연납 할인 신청", "window": [1, 3, 6, 9], "audience": "차량 소유자", "official": ["https://www.wetax.go.kr"] },
+  { "id": "vat-final-jan", "title": "개인사업자 부가가치세 확정신고 체크", "window": [1, 7], "audience": "개인사업자", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "yearend-simplified", "title": "연말정산 간소화 서비스 이용법", "window": [1], "audience": "직장인", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "yearend-mistakes", "title": "연말정산 서류 제출 때 자주 하는 실수", "window": [1, 2], "audience": "직장인", "official": ["https://www.nts.go.kr"] },
+  { "id": "earned-income-credit-half", "title": "근로장려금 반기 신청", "window": [3, 9], "audience": "근로소득자", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "earned-income-credit-may", "title": "근로·자녀장려금 정기 신청", "window": [5], "audience": "근로·사업소득자", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "income-tax-may", "title": "종합소득세 신고 처음 하는 법", "window": [5], "audience": "프리랜서·사업자", "official": ["https://www.hometax.go.kr", "https://www.nts.go.kr"] },
+  { "id": "gov-benefit-lookup", "title": "내가 받을 수 있는 정부 혜택 한 번에 조회", "window": [], "audience": "전체", "official": ["https://www.gov.kr", "https://www.bokjiro.go.kr"] },
+  { "id": "basic-pension", "title": "기초연금 신청 대상과 방법", "window": [], "audience": "65세 이상·자녀", "official": ["https://www.bokjiro.go.kr", "https://www.nps.or.kr"] },
+  { "id": "nps-check", "title": "국민연금 예상 수령액 조회와 추납", "window": [], "audience": "직장인", "official": ["https://www.nps.or.kr"] },
+  { "id": "document-online", "title": "주민등록등본 등 서류 온라인 발급 주의사항", "window": [], "audience": "전체", "official": ["https://www.gov.kr"] },
+  { "id": "g2b-first-bid", "title": "나라장터 입찰 처음 참여하는 사업자 체크리스트", "window": [], "audience": "소상공인·사업자", "official": ["https://www.g2b.go.kr"], "edenbid": true }
+ ]
+}

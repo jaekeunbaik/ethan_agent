@@ -1,0 +1,31 @@
+name: Notify Blog Draft
+
+on:
+  # 블로그 루틴이 blog_queue/<날짜>/post.html 을 push 하면 디스코드로 검수 알림
+  push:
+    paths: ['blog_queue/*/post.html']
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+    - name: Send Discord message
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        REPO: ${{ github.repository }}
+      run: |
+        [ -z "$DISCORD_WEBHOOK_URL" ] && { echo "DISCORD_WEBHOOK_URL 없음, 건너뜀"; exit 0; }
+        for f in $(git diff --name-only HEAD~1 HEAD -- 'blog_queue/*/post.html'); do
+          d=$(dirname "$f"); slug=$(basename "$d")
+          title=$(jq -r '.title // "제목 없음"' "$d/meta.json" 2>/dev/null)
+          unv=$(jq -r '(.unverified // []) | length' "$d/meta.json" 2>/dev/null)
+          msg="📝 블로그 초안 도착: ${title}
+        미확인 항목: ${unv:-?}개
+        글(Raw 복사용): https://raw.githubusercontent.com/${REPO}/master/${f}
+        메타: https://github.com/${REPO}/blob/master/${d}/meta.json
+        카드뉴스 승인(approved:true로 수정): https://github.com/${REPO}/edit/master/sns_queue/${slug}/card.json"
+          jq -n --arg c "$msg" '{content:$c}' | curl -sS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"
+        done
