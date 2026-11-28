@@ -8,8 +8,9 @@ import path from 'path';
 import fs from 'fs';
 import http from 'http';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-const HERE = path.dirname(new URL(import.meta.url).pathname.slice(1));
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.join(HERE, '..');
 const STATE = path.join(HERE, 'state.json'); // { drafted: { <slug>: { title, at, id } }, published: [<slug>] } (gitignore)
 // 토큰은 저장소 밖(AppData)에 둔다: 커밋되면 블로그 권한이 통째로 넘어감
