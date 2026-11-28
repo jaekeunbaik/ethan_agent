@@ -8,3 +8,5 @@ temp_alpha_shorts/
 *.log
 
 upload_queue/**/video.mp4
+
+sns_cleanup_list.json

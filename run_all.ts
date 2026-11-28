@@ -1,6 +1,5 @@
 import { execSync } from 'child_process';
 import dotenv from 'dotenv';
-import { runMarketingPipeline } from './marketingAutomation';
 
 dotenv.config();
 
@@ -8,13 +7,8 @@ async function runAllPipelines() {
     console.log('🚀 [MasterRunner] 4대 SNS 매체 풀패키지 마케팅 파이프라인 가동 시작!');
     console.log('=================================================================');
 
-    // 1. 4대 SNS (Draft Ethan 스레드, MYTI 스레드, 인스타그램, 유튜브 쇼츠) 풀패키지 가동
-    console.log('\n[1/2] 🎨 4대 매체 (Draft Ethan Threads, MYTI Threads, Instagram, YouTube Shorts) 전체 게재 진행 중...');
-    try {
-        await runMarketingPipeline();
-    } catch (e: any) {
-        console.error('❌ 4대 매체 풀패키지 파이프라인 오류:', e.message || e);
-    }
+    // 1. [중단 2026-11-28] draft_ethan 계정을 생활정보 계정으로 전환 → 자소서/MYTI 자동 게시 제거.
+    //    카드뉴스는 sns_queue + publish_sns.yml(검수 후 게시)로 대체.
 
     // 2. 카카오톡 썰 숏폼 동영상 추가 가동
     console.log('\n[2/2] 📱 커뮤니티 썰 카카오톡 모션 쇼츠 추가 가동 중...');

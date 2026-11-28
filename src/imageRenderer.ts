@@ -25,6 +25,19 @@ if (fs.existsSync(notoFile)) {
 
 const CANVAS_SIZE = 1080;
 
+// 카드 브랜드 문구. 기본값 = 기존 dethan, 다른 계정은 setBrand()로 교체
+// 이모지는 렌더 폰트에 없어 □로 깨지므로 문구에 넣지 말 것
+export interface Brand { name: string; badge: string; url: string; tags: string[]; coverChip: string; ctaBadge: string; ctaButton: string; tip: string }
+let BRAND: Brand = {
+    name: 'dethan (디든)', badge: 'AI', url: 'draft-ethan.vercel.app',
+    coverChip: '⚡ 3초 AI 자소서 교정리포트',
+    tags: ['#자소서첨삭', '#AI교정', '#서류합격', '#dethan', '#디든'],
+    ctaBadge: '🎁 FREE TRIAL', ctaButton: '지금 프로필 링크에서 무료 교정 받기 ➔',
+    tip: '추상적인 표현 대신 직무 성과와 수치를 명시하세요!'
+};
+export function setBrand(b: Partial<Brand>) { BRAND = { ...BRAND, ...b }; }
+let TOTAL = 3; // 현재 렌더 중인 슬라이드 총 장수
+
 interface ColorTheme {
     grad1: string;
     grad2: string;
@@ -146,10 +159,11 @@ function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSli
     ctx.font = `bold 28px ${FONT_FAMILY}`;
     ctx.fillStyle = '#0F172A';
     ctx.textAlign = 'left';
-    ctx.fillText('dethan (디든)', 60, 74);
+    ctx.fillText(BRAND.name, 60, 74);
 
-    // 상단 AI 자소서 배지
-    const badgeX = 60 + ctx.measureText('dethan (디든)').width + 12;
+    // 상단 배지 (badge 비우면 생략)
+    const badgeX = 60 + ctx.measureText(BRAND.name).width + 12;
+    if (BRAND.badge) {
     roundRect(ctx, badgeX, 53, 44, 26, 8);
     const aiBg = ctx.createLinearGradient(badgeX, 0, badgeX + 44, 0);
     aiBg.addColorStop(0, '#2563EB');
@@ -159,7 +173,8 @@ function drawHeader(ctx: CanvasRenderingContext2D, slideNumber: number, totalSli
     ctx.font = `bold 14px ${FONT_FAMILY}`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('AI', badgeX + 22, 70);
+    ctx.fillText(BRAND.badge, badgeX + 22, 70);
+    }
 
     // 페이지 번호
     ctx.font = `bold 22px ${FONT_FAMILY}`;
@@ -198,7 +213,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, slideNumber: number, totalSli
     ctx.font = `bold 18px ${FONT_FAMILY}`;
     ctx.fillStyle = isDark ? 'rgba(255,255,255,0.6)' : COLORS.textMuted;
     ctx.textAlign = 'right';
-    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE - 60, CANVAS_SIZE - 45);
+    ctx.fillText(BRAND.url, CANVAS_SIZE - 60, CANVAS_SIZE - 45);
 }
 
 // ─── 1. 커버 슬라이드 (Cover Slide - Bright & Modern Light Hero) ──────────────────────────
@@ -224,12 +239,12 @@ function drawCoverSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.fillStyle = glow2; ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     // 헤더/푸터 (라이트 모드)
-    drawHeader(ctx, slide.slideNumber, 3, false);
-    drawFooter(ctx, slide.slideNumber, 3, false);
+    drawHeader(ctx, slide.slideNumber, TOTAL, false);
+    drawFooter(ctx, slide.slideNumber, TOTAL, false);
 
     // 카테고리 칩
     ctx.font = `bold 22px ${FONT_FAMILY}`;
-    const chipText = '⚡ 3초 AI 자소서 교정리포트';
+    const chipText = BRAND.coverChip;
     const chipW = ctx.measureText(chipText).width + 40;
     roundRect(ctx, 60, 140, chipW, 48, 24);
     const chipGrad = ctx.createLinearGradient(60, 0, 60 + chipW, 0);
@@ -280,7 +295,7 @@ function drawCoverSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     }
 
     // 하단 태그 (밝고 선명한 뱃지)
-    const tags = ['#자소서첨삭', '#AI교정', '#서류합격', '#dethan', '#디든'];
+    const tags = BRAND.tags;
     let tagX = 60;
     const tagY = CANVAS_SIZE - 170;
     tags.forEach(tag => {
@@ -305,8 +320,8 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    drawHeader(ctx, slide.slideNumber, 3, false);
-    drawFooter(ctx, slide.slideNumber, 3, false);
+    drawHeader(ctx, slide.slideNumber, TOTAL, false);
+    drawFooter(ctx, slide.slideNumber, TOTAL, false);
 
     // 상단 섹션 제목
     ctx.font = `bold 46px ${FONT_FAMILY}`;
@@ -468,8 +483,8 @@ function drawBodySlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.font = `bold 24px ${FONT_FAMILY}`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    const highlight = slide.highlightText ? stripEmojis(slide.highlightText) : '추상적인 표현 대신 직무 성과와 수치를 명시하세요!';
-    ctx.fillText(`💡 TIP: ${highlight}`, CANVAS_SIZE / 2, tipY + 46);
+    const highlight = slide.highlightText ? stripEmojis(slide.highlightText) : BRAND.tip;
+    ctx.fillText(`TIP: ${highlight}`, CANVAS_SIZE / 2, tipY + 46); // 이모지 폰트 없음(□로 깨짐)
 }
 
 // ─── 3. CTA 슬라이드 (CTA Slide - Premium Bright Conversion Card) ──────────────────────
@@ -483,7 +498,7 @@ function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    drawHeader(ctx, slide.slideNumber, 3, false);
+    drawHeader(ctx, slide.slideNumber, TOTAL, false);
 
     // 중앙 화이트 포커스 카드
     const cardX = 60, cardY = 115, cardW = CANVAS_SIZE - 120, cardH = 820;
@@ -501,7 +516,7 @@ function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.font = `bold 20px ${FONT_FAMILY}`;
     ctx.fillStyle = '#2563EB';
     ctx.textAlign = 'center';
-    ctx.fillText('🎁 FREE TRIAL', CANVAS_SIZE / 2, cardY + 65);
+    ctx.fillText(BRAND.ctaBadge, CANVAS_SIZE / 2, cardY + 65);
 
     // 메인 헤드라인 타이틀 (선명한 다크 네이비)
     ctx.font = `bold 52px ${FONT_FAMILY}`;
@@ -561,12 +576,12 @@ function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
     ctx.font = `bold 30px ${FONT_FAMILY}`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('지금 프로필 링크에서 무료 교정 받기 ➔', CANVAS_SIZE / 2, btnY + 55);
+    ctx.fillText(BRAND.ctaButton, CANVAS_SIZE / 2, btnY + 55);
 
     // 하단 URL
     ctx.font = `bold 22px ${FONT_FAMILY}`;
     ctx.fillStyle = '#475569';
-    ctx.fillText('draft-ethan.vercel.app', CANVAS_SIZE / 2, CANVAS_SIZE - 40);
+    ctx.fillText(BRAND.url, CANVAS_SIZE / 2, CANVAS_SIZE - 40);
 }
 
 
@@ -575,6 +590,7 @@ function drawCtaSlide(ctx: CanvasRenderingContext2D, slide: CardNewsSlide) {
 export async function renderSlideImage(slide: CardNewsSlide, totalSlides: number = 3): Promise<Buffer> {
     const canvas = createCanvas(CANVAS_SIZE, CANVAS_SIZE);
     const ctx = canvas.getContext('2d');
+    TOTAL = totalSlides;
 
     if (slide.type === 'COVER') {
         drawCoverSlide(ctx, slide);

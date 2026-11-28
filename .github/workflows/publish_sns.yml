@@ -1,0 +1,54 @@
+name: Publish Queued Card News (Threads + Instagram)
+
+on:
+  # sns_queue/<slug>/card.json 에서 "approved": true 로 바꿔 push 하면 게시 (검수 게이트)
+  push:
+    paths: ['sns_queue/*/card.json', 'sns_queue/brand.json']
+  workflow_dispatch:
+    inputs:
+      item:
+        description: 'sns_queue 하위 폴더명 (비우면 승인된 미게시 첫 항목)'
+        required: false
+        default: ''
+      dry_run:
+        description: '게시 없이 대상·검증만 확인'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency: publish-sns
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    - name: Install Korean fonts
+      run: sudo apt-get update && sudo apt-get install -y fonts-nanum fonts-noto-cjk
+    - run: npm ci
+    - run: npm run build
+    - run: node dist/src/publish_sns.js --selfcheck
+    - name: Publish one approved item
+      env:
+        THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+        INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        ITEM: ${{ inputs.item }}
+      run: node dist/src/publish_sns.js ${{ inputs.dry_run && '--dry-run' || '' }}
+    - name: Record result (meta.json)
+      if: ${{ always() && !inputs.dry_run }}
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@users.noreply.github.com"
+        git add sns_queue/*/meta.json 2>/dev/null || true
+        # 이미지 업로드가 실행 중 master 에 커밋하므로 rebase 후 push
+        git diff --cached --quiet || (git commit -m "chore: record published card news" && git pull --rebase && git push)
