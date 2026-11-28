@@ -22,7 +22,8 @@
 - slides 3~5장, 1번 COVER, 마지막 CTA, 나머지 BODY. slideNumber는 1부터 순서대로.
 - BODY: title ≤20자, contentLines ≤4줄, 각 줄 ≤26자. 이모지 쓰지 않는다(□로 깨짐).
 - COVER: title(줄바꿈 됨) + subtitle 한 줄. CTA: title, subtitle, contentLines 정확히 3개(블로그에서 볼 수 있는 내용 3가지).
-- thread_text ≤500자 (스레드), 마지막 줄 "자세한 일정과 방법은 프로필 링크 블로그에". insta_caption은 요약 + 해시태그 5~8개.
+- 블로그 주소: https://ontheday.tistory.com (티스토리 "온 더 데이"). 아직 발행 전이라 개별 글 주소는 모른다.
+- thread_text ≤500자 (스레드), 마지막 줄 "자세한 일정과 방법은 블로그에 정리했어요 → ontheday.tistory.com". insta_caption은 요약 + 해시태그 5~8개.
 - 카드의 사실도 블로그와 같은 출처 기준. 블로그에 없는 사실을 카드에 넣지 않는다.
 
 ## 메타 (blog_queue/<YYYY-MM-DD>/meta.json)
