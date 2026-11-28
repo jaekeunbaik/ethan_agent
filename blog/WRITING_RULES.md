@@ -9,7 +9,7 @@
 - 법·세금 해석을 단정하지 않는다. 개인 상황이 다를 수 있으면 "홈택스/관할 기관에서 확인" 안내를 붙인다.
 - 저작권: 기관 문서·기사 문장을 복사하지 않는다. 사실만 가져와 직접 쓴다.
 
-## 블로그 글 (blog_queue/<YYYY-MM-DD>/post.html)
+## 블로그 글 (blog_queue/<YYYY-MM-DD>_<topicId>/post.html)
 - 티스토리 **HTML 모드**에 그대로 붙일 수 있는 본문 HTML만 (`<html>`/`<head>`/`<style>`/스크립트 없음). 사용 태그: h2, h3, p, ul, ol, li, strong, table, br, a.
 - 링크는 `<a href="https://...">설명 문구</a>` 형태로, 링크 글자는 URL이 아닌 설명(예: "복지로 공지 바로가기")으로 쓴다. (HTML 모드 붙여넣기에서 정상 동작 확인 2026-11-28. 기본 에디터에 붙이면 href가 깨진다.)
 - 구성: 한 줄 요약 → 누가 해당되나 → 언제까지(날짜, 출처 링크) → 방법(번호 단계) → 자주 하는 실수 → 체크리스트 → 출처 목록.
@@ -17,7 +17,7 @@
 - 맨 아래에 `<!-- 검수자 의견 1~2문단 여기에 추가 -->` 주석을 남긴다 (사람이 경험·의견을 덧붙이는 자리).
 - edenbid 주제(calendar의 "edenbid": true)는 끝에 "입찰 공고를 키워드로 매일 받아보고 싶다면 프로필 링크에서 무료 알림 신청" 한 줄.
 
-## 카드뉴스 (sns_queue/<YYYY-MM-DD>/card.json) — 렌더러 제약, 어기면 게시가 거부됨
+## 카드뉴스 (sns_queue/<YYYY-MM-DD>_<topicId>/card.json) — 렌더러 제약, 어기면 게시가 거부됨
 - 스키마: `{ topic, approved:false, sources:[https...], tags:[...], thread_text, insta_caption, slides:[...] }`.
 - tags: 표지 해시태그 3~5개, 주제에 맞게 (예: `["#에너지바우처", "#정부지원금", "#신청마감", "#생활정보"]`). 각 `#` 포함 10자 이하, 이모지 금지. **approved는 항상 false** (사람이 검수 후 true로 바꿈).
 - slides 3~5장, 1번 COVER, 마지막 CTA, 나머지 BODY. slideNumber는 1부터 순서대로.
@@ -27,5 +27,5 @@
 - thread_text ≤500자 (스레드), 마지막 줄 "자세한 일정과 방법은 블로그에 정리했어요 → ontheday.tistory.com". insta_caption은 요약 + 해시태그 5~8개.
 - 카드의 사실도 블로그와 같은 출처 기준. 블로그에 없는 사실을 카드에 넣지 않는다.
 
-## 메타 (blog_queue/<YYYY-MM-DD>/meta.json)
+## 메타 (blog_queue/<YYYY-MM-DD>_<topicId>/meta.json)
 `{ "topicId", "title", "createdAt", "deadline": "YYYY-MM-DD 또는 null", "sources": [...], "unverified": [...], "selfCheck": "통과 항목 요약" }`
