@@ -10,3 +10,8 @@ temp_alpha_shorts/
 upload_queue/**/video.mp4
 
 sns_cleanup_list.json
+
+local-tistory/node_modules
+local-tistory/state.json
+local-tistory/*.png
+local-tistory/run.log
