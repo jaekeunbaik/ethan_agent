@@ -17,7 +17,8 @@
 - edenbid 주제(calendar의 "edenbid": true)는 끝에 "입찰 공고를 키워드로 매일 받아보고 싶다면 프로필 링크에서 무료 알림 신청" 한 줄.
 
 ## 카드뉴스 (sns_queue/<YYYY-MM-DD>/card.json) — 렌더러 제약, 어기면 게시가 거부됨
-- 스키마: `{ topic, approved:false, sources:[https...], thread_text, insta_caption, slides:[...] }`. **approved는 항상 false** (사람이 검수 후 true로 바꿈).
+- 스키마: `{ topic, approved:false, sources:[https...], tags:[...], thread_text, insta_caption, slides:[...] }`.
+- tags: 표지 해시태그 3~5개, 주제에 맞게 (예: `["#에너지바우처", "#정부지원금", "#신청마감", "#생활정보"]`). 각 `#` 포함 10자 이하, 이모지 금지. **approved는 항상 false** (사람이 검수 후 true로 바꿈).
 - slides 3~5장, 1번 COVER, 마지막 CTA, 나머지 BODY. slideNumber는 1부터 순서대로.
 - BODY: title ≤20자, contentLines ≤4줄, 각 줄 ≤26자. 이모지 쓰지 않는다(□로 깨짐).
 - COVER: title(줄바꿈 됨) + subtitle 한 줄. CTA: title, subtitle, contentLines 정확히 3개(블로그에서 볼 수 있는 내용 3가지).

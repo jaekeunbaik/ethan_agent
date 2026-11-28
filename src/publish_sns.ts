@@ -19,6 +19,7 @@ export interface Card {
     thread_text: string;
     insta_caption: string;
     slides: CardNewsSlide[];
+    tags?: string[]; // 표지 해시태그 (없으면 brand.json 기본값)
 }
 
 // 렌더러가 줄바꿈을 안 하는 자리(본문 제목·본문 줄)는 길이 제한으로 잘림 방지
@@ -30,6 +31,8 @@ export function validateCard(c: Card): string[] {
     if (!c.insta_caption || c.insta_caption.length > 2200) e.push('insta_caption: 1~2200자');
     const s = c.slides || [];
     if (s.length < 3 || s.length > 5) e.push('slides: 3~5장');
+    // 표지 태그 한 줄에 들어가는 폭: 최대 5개, 각 '#' 포함 10자 이하
+    if (c.tags && (c.tags.length > 5 || c.tags.some(t => !t.startsWith('#') || t.length > 10))) e.push('tags: 최대 5개, #으로 시작, 10자 이하');
     if (s[0]?.type !== 'COVER') e.push('slides[0] 은 COVER');
     if (s[s.length - 1]?.type !== 'CTA') e.push('마지막 slide 는 CTA');
     s.forEach((sl, i) => {
@@ -58,6 +61,9 @@ function selfcheck() {
     if (!bad({ sources: ['http://x'] })) throw new Error('selfcheck: http 출처 통과됨');
     if (!bad({ slides: ok.slides.slice(0, 2) })) throw new Error('selfcheck: 2장 통과됨');
     if (!bad({ slides: [ok.slides[0], { ...ok.slides[1], contentLines: ['가'.repeat(27)] }, ok.slides[2]] })) throw new Error('selfcheck: 긴 줄 통과됨');
+    if (validateCard({ ...ok, tags: ['#에너지바우처', '#생활정보'] }).length) throw new Error('selfcheck: 정상 태그 거부됨');
+    if (!bad({ tags: ['에너지바우처'] })) throw new Error('selfcheck: # 없는 태그 통과됨');
+    if (!bad({ tags: ['#a', '#b', '#c', '#d', '#e', '#f'] })) throw new Error('selfcheck: 태그 6개 통과됨');
     console.log('selfcheck OK');
 }
 
@@ -86,6 +92,7 @@ function selfcheck() {
 
     const brand = readJson(`${Q}/brand.json`);
     if (brand) setBrand(brand);
+    if (card.tags?.length) setBrand({ tags: card.tags });
     const save = () => fs.writeFileSync(metaPath, JSON.stringify(meta, null, 1), 'utf8');
 
     // 플랫폼별로 성공한 것만 기록 → 재실행 시 실패한 쪽만 다시 시도
